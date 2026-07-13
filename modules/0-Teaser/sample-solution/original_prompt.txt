@@ -1,0 +1,8 @@
+ I'd like to create a pokemon type matchups game that runs out of a web browser.  For simplicity, let's make it a single   
+  webpage application with no server component, so the entire thing must be in Javascript, perhaps using Jquery.  The first 
+  level of difficulty will not feature any specific pokemon.  Instead, given a single pokemon type (there should be 18      
+  types), you will be asked to select the move types that would be 2x effective against that type.  The quiz would iterate  
+  through all 18 types in random order.  The second level of difficulty would cover dual types, like water-grass.  You      
+  would be required to identify all attack types that would be 4x effective and types that are 2x effective.  The           
+  application should be user-friendly enough to work on a mobile device and rely purely on clicking.  Do you have any       
+  clarifying questions before you build this? 

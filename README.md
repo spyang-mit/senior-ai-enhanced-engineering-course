@@ -4,6 +4,7 @@ Last Update: July 12, 2026
 This is a work in progress.  When it's ready, I'll update this README accordingly.
 
 # Introduction
+
 LLM-based AI coding tools are completely changing the way many software engineers operate today.
 If you think AI is completely transforming software engineering today and want to ride this wave,
 this course is for you.  If you are an AI skeptic, I will make no attempt to convince you otherwise.
@@ -23,6 +24,15 @@ I am the type of person that learns by example, so rather than only teach you th
 with at least one assignment, and I'll even provide sample solutions.  In many cases, I will even provide
 quizzes to help you solidify your understanding.  In fact, I believe the quizzes will be instrumental
 in accelerating your ability to learn the curriculum.
+
+# Recommended OS
+
+Although you could make this work with a Windows machine, I highly recommend a Mac or Linux environment.
+This course will teach you how to think like a backend engineer, and like it or not, most webservers are
+Linux-based, so in the circles where I run, it's safe to say that nearly everybody uses a Mac laptop, which
+internally operates like Linux.  The foundation module of this course assumes you are using a Mac, but
+truthfully, with a little bit of effort, you can surely make this work on Windows, so I don't think anybody
+should feel excluded.
 
 # About the author
 Steven Yang is an MIT graduate who has been a software engineering professional since 1998.  He has

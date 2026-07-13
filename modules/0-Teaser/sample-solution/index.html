@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Pokémon Type Matchup Trainer</title>
+<style>
+  :root {
+    --bg: #0f1226;
+    --panel: #1b2040;
+    --panel2: #232a52;
+    --text: #eef1ff;
+    --muted: #9aa3c7;
+    --good: #37d67a;
+    --bad: #ff5a6a;
+    --gold: #ffd24a;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: radial-gradient(1200px 600px at 50% -10%, #1a2148, var(--bg));
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    padding: 12px 12px 40px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  header { text-align: center; margin: 6px 0 14px; }
+  h1 { font-size: 20px; margin: 0 0 10px; letter-spacing: .3px; }
+
+  .levels { display: flex; gap: 8px; justify-content: center; margin-bottom: 10px; }
+  .levels button {
+    flex: 1; max-width: 220px; padding: 10px 8px; border-radius: 12px; border: 1px solid #333c72;
+    background: var(--panel); color: var(--text); font-size: 14px; font-weight: 600; cursor: pointer;
+  }
+  .levels button.active { background: var(--gold); color: #201a00; border-color: var(--gold); }
+
+  .statusbar {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--panel); border: 1px solid #2c356b; border-radius: 12px;
+    padding: 8px 14px; margin-bottom: 12px; font-size: 14px;
+  }
+  .statusbar .streak b { color: var(--gold); font-size: 18px; }
+  .statusbar .progress { color: var(--muted); }
+
+  .prompt {
+    background: var(--panel); border: 1px solid #2c356b; border-radius: 14px;
+    padding: 14px; margin-bottom: 12px; text-align: center;
+  }
+  .prompt .lead { color: var(--muted); font-size: 14px; margin-bottom: 10px; }
+  .prompt .lead .x4 { color: var(--gold); font-weight: 700; }
+  .badges { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .badge {
+    padding: 8px 16px; border-radius: 999px; font-weight: 800; font-size: 16px;
+    color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.45); letter-spacing: .4px;
+  }
+
+  .grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px;
+  }
+  @media (min-width: 440px) { .grid { grid-template-columns: repeat(6, 1fr); } }
+
+  .tbtn {
+    position: relative; border: 3px solid transparent; border-radius: 12px;
+    padding: 12px 2px; font-weight: 800; font-size: 13px; color: #fff; cursor: pointer;
+    text-shadow: 0 1px 2px rgba(0,0,0,.5); overflow: hidden; user-select: none;
+    transition: transform .05s ease, filter .1s ease; min-height: 46px;
+  }
+  .tbtn:active { transform: scale(.96); }
+  .tbtn.dim { filter: brightness(.5) saturate(.6); }
+  .tbtn.sel2 { border-color: #fff; box-shadow: 0 0 0 2px rgba(255,255,255,.25) inset; }
+  .tbtn.sel4 { border-color: var(--gold); box-shadow: 0 0 12px rgba(255,210,74,.6); }
+  .tag {
+    position: absolute; top: 2px; right: 4px; font-size: 12px; font-weight: 900;
+    background: rgba(0,0,0,.45); border-radius: 6px; padding: 0 4px;
+  }
+  .tag.gold { background: var(--gold); color: #201a00; }
+  /* feedback marks */
+  .tbtn .mark { position: absolute; bottom: 2px; right: 4px; font-size: 14px; font-weight: 900; }
+  .tbtn.correct { outline: 3px solid var(--good); outline-offset: -3px; }
+  .tbtn.wrong { outline: 3px solid var(--bad); outline-offset: -3px; }
+  .tbtn.missed { outline: 3px dashed var(--gold); outline-offset: -3px; }
+
+  .actions { display: flex; gap: 10px; }
+  .actions button {
+    flex: 1; padding: 14px; border-radius: 12px; border: none; font-size: 16px; font-weight: 700; cursor: pointer;
+  }
+  #submitBtn { background: var(--gold); color: #201a00; }
+  #nextBtn { background: var(--panel2); color: var(--text); border: 1px solid #3a4488; }
+  button:disabled { opacity: .4; cursor: default; }
+
+  .feedback {
+    margin-top: 12px; border-radius: 12px; padding: 12px 14px; font-size: 14px; line-height: 1.5;
+    display: none;
+  }
+  .feedback.show { display: block; }
+  .feedback.ok { background: rgba(55,214,122,.14); border: 1px solid var(--good); }
+  .feedback.no { background: rgba(255,90,106,.12); border: 1px solid var(--bad); }
+  .feedback h3 { margin: 0 0 6px; font-size: 15px; }
+  .feedback .row { margin: 2px 0; }
+  .chip {
+    display: inline-block; padding: 2px 9px; border-radius: 999px; font-weight: 700; font-size: 12px;
+    color: #fff; margin: 2px 4px 2px 0; text-shadow: 0 1px 1px rgba(0,0,0,.4);
+  }
+  .hint { text-align: center; color: var(--muted); font-size: 12px; margin-top: 14px; }
+  .roundmsg { text-align:center; color: var(--gold); font-weight:700; margin-top:10px; min-height: 18px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>⚡ Pokémon Type Matchup Trainer</h1>
+    <div class="levels">
+      <button id="lvl1" class="active" data-level="1">Level 1 · Single Types</button>
+      <button id="lvl2" data-level="2">Level 2 · Dual Types</button>
+    </div>
+  </header>
+
+  <div class="statusbar">
+    <div class="streak">Streak: <b id="streak">0</b></div>
+    <div class="progress" id="progress">1 / 18</div>
+  </div>
+
+  <div class="prompt">
+    <div class="lead" id="lead"></div>
+    <div class="badges" id="badges"></div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="actions">
+    <button id="submitBtn">Check</button>
+    <button id="nextBtn" disabled>Next ▸</button>
+  </div>
+
+  <div class="feedback" id="feedback"></div>
+  <div class="roundmsg" id="roundmsg"></div>
+
+  <div class="hint" id="hint"></div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script>
+/* ---------- Type data ---------- */
+const TYPES = ["Normal","Fire","Water","Electric","Grass","Ice","Fighting","Poison",
+  "Ground","Flying","Psychic","Bug","Rock","Ghost","Dragon","Dark","Steel","Fairy"];
+
+const COLORS = {
+  Normal:"#9a9a72", Fire:"#ee8130", Water:"#6390f0", Electric:"#d9b307", Grass:"#5fb246",
+  Ice:"#6fc6c3", Fighting:"#c22e28", Poison:"#a33ea1", Ground:"#c99b3f", Flying:"#8f74ee",
+  Psychic:"#f95587", Bug:"#93a512", Rock:"#a58f2c", Ghost:"#735797", Dragon:"#6f35fc",
+  Dark:"#705746", Steel:"#8f8fb0", Fairy:"#d685ad"
+};
+
+/* Attacker -> effectiveness against defenders (Gen 6+). Unlisted = 1x. */
+const CHART = {
+  Normal:   { Rock:.5, Ghost:0, Steel:.5 },
+  Fire:     { Fire:.5, Water:.5, Grass:2, Ice:2, Bug:2, Rock:.5, Dragon:.5, Steel:2 },
+  Water:    { Fire:2, Water:.5, Grass:.5, Ground:2, Rock:2, Dragon:.5 },
+  Electric: { Water:2, Electric:.5, Grass:.5, Ground:0, Flying:2, Dragon:.5 },
+  Grass:    { Fire:.5, Water:2, Grass:.5, Poison:.5, Ground:2, Flying:.5, Bug:.5, Rock:2, Dragon:.5, Steel:.5 },
+  Ice:      { Fire:.5, Water:.5, Grass:2, Ice:.5, Ground:2, Flying:2, Dragon:2, Steel:.5 },
+  Fighting: { Normal:2, Ice:2, Poison:.5, Flying:.5, Psychic:.5, Bug:.5, Rock:2, Ghost:0, Dark:2, Steel:2, Fairy:.5 },
+  Poison:   { Grass:2, Poison:.5, Ground:.5, Rock:.5, Ghost:.5, Steel:0, Fairy:2 },
+  Ground:   { Fire:2, Electric:2, Grass:.5, Poison:2, Flying:0, Bug:.5, Rock:2, Steel:2 },
+  Flying:   { Electric:.5, Grass:2, Fighting:2, Bug:2, Rock:.5, Steel:.5 },
+  Psychic:  { Fighting:2, Poison:2, Psychic:.5, Dark:0, Steel:.5 },
+  Bug:      { Fire:.5, Grass:2, Fighting:.5, Poison:.5, Flying:.5, Psychic:2, Ghost:.5, Dark:2, Steel:.5, Fairy:.5 },
+  Rock:     { Fire:2, Ice:2, Fighting:.5, Ground:.5, Flying:2, Bug:2, Steel:.5 },
+  Ghost:    { Normal:0, Psychic:2, Ghost:2, Dark:.5 },
+  Dragon:   { Dragon:2, Steel:.5, Fairy:0 },
+  Dark:     { Fighting:.5, Psychic:2, Ghost:2, Dark:.5, Fairy:.5 },
+  Steel:    { Fire:.5, Water:.5, Electric:.5, Ice:2, Rock:2, Steel:.5, Fairy:2 },
+  Fairy:    { Fire:.5, Fighting:2, Poison:.5, Dragon:2, Dark:2, Steel:.5 }
+};
+
+function mult(attacker, defender) {
+  const row = CHART[attacker];
+  return (row && row[defender] !== undefined) ? row[defender] : 1;
+}
+
+/* Real, existing dual-type pairings (order-independent). */
+const DUAL_PAIRS = [
+  ["Grass","Poison"],["Water","Ground"],["Water","Flying"],["Fire","Flying"],["Bug","Flying"],
+  ["Bug","Poison"],["Normal","Flying"],["Water","Ice"],["Rock","Ground"],["Ghost","Poison"],
+  ["Grass","Flying"],["Bug","Grass"],["Rock","Water"],["Rock","Flying"],["Rock","Bug"],
+  ["Ice","Flying"],["Water","Psychic"],["Fire","Rock"],["Steel","Ground"],["Steel","Flying"],
+  ["Dragon","Flying"],["Water","Poison"],["Fighting","Steel"],["Dark","Flying"],["Ghost","Grass"],
+  ["Electric","Flying"],["Psychic","Fairy"],["Steel","Fairy"],["Rock","Steel"],["Water","Dark"],
+  ["Fire","Fighting"],["Grass","Fairy"],["Dragon","Ground"],["Ground","Flying"],["Bug","Steel"],
+  ["Ghost","Dark"],["Water","Steel"],["Ice","Ground"],["Grass","Dark"],
+  ["Grass","Fighting"],["Fire","Ground"],["Fire","Steel"],["Steel","Psychic"],["Dragon","Psychic"],
+  ["Water","Fairy"],["Dragon","Fire"],["Ground","Dark"],["Fighting","Dark"],["Poison","Dark"],
+  ["Poison","Flying"],["Electric","Steel"],["Psychic","Fighting"],["Rock","Dark"],["Ice","Psychic"],
+  ["Grass","Steel"],["Grass","Ice"],["Fairy","Flying"],["Normal","Psychic"],["Normal","Fairy"],
+  ["Ghost","Fire"],["Water","Dragon"],["Dragon","Dark"],["Poison","Dragon"],
+  ["Ground","Ghost"],["Steel","Dragon"],["Ice","Rock"],["Ghost","Flying"],["Electric","Ghost"],
+  ["Ghost","Dragon"],["Dark","Fire"],["Rock","Fairy"],["Water","Fighting"],
+  ["Bug","Electric"],["Bug","Water"],["Psychic","Grass"]
+];
+
+/* ---------- Game state ---------- */
+let level = 1;
+let queue = [];       // array of prompts for current round
+let idx = 0;
+let streak = 0;
+let selection = {};   // type -> state (0 none, 1 = x2, 2 = x4)
+let answered = false;
+let currentAnswer = null; // {two:Set, four:Set} of correct move types
+
+function shuffle(a) {
+  a = a.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function buildRound() {
+  if (level === 1) {
+    queue = shuffle(TYPES).map(t => ({ defs: [t] }));
+  } else {
+    queue = shuffle(DUAL_PAIRS).map(p => ({ defs: p.slice() }));
+  }
+  idx = 0;
+}
+
+/* For a given defending type list, compute correct super-effective attackers. */
+function computeAnswer(defs) {
+  const two = new Set(), four = new Set();
+  for (const atk of TYPES) {
+    let m = 1;
+    for (const d of defs) m *= mult(atk, d);
+    if (m === 4) four.add(atk);
+    else if (m === 2) two.add(atk);
+  }
+  return { two, four };
+}
+
+/* ---------- Rendering ---------- */
+function renderGrid() {
+  const $g = $("#grid").empty();
+  TYPES.forEach(t => {
+    const $b = $('<div class="tbtn"></div>')
+      .attr("data-type", t)
+      .text(t)
+      .css("background", COLORS[t]);
+    $g.append($b);
+  });
+}
+
+function renderPrompt() {
+  const q = queue[idx];
+  currentAnswer = computeAnswer(q.defs);
+  const $badges = $("#badges").empty();
+  q.defs.forEach(d => {
+    $badges.append($('<span class="badge"></span>').text(d).css("background", COLORS[d]));
+  });
+  if (level === 1) {
+    $("#lead").html("Select every move type that is <b>2× super effective</b> against:");
+    $("#hint").text("Tap a type to select. Tap again to deselect. Then press Check.");
+  } else {
+    $("#lead").html('Tap once = <b>2×</b>, twice = <b class="x4">4×</b>, again to clear. Mark every super-effective move type against:');
+    $("#hint").text("One tap = ×2, two taps = ×4, three taps clears it.");
+  }
+  $("#progress").text((idx + 1) + " / " + queue.length);
+  $("#roundmsg").text("");
+}
+
+function resetSelection() {
+  selection = {};
+  answered = false;
+  $(".tbtn").removeClass("sel2 sel4 dim correct wrong missed");
+  $(".tbtn .tag, .tbtn .mark").remove();
+  $("#feedback").removeClass("show ok no").empty();
+  $("#submitBtn").prop("disabled", false).text("Check");
+  $("#nextBtn").prop("disabled", true);
+}
+
+function paintButton(t) {
+  const $b = $('.tbtn[data-type="' + t + '"]');
+  $b.removeClass("sel2 sel4");
+  $b.find(".tag").remove();
+  const s = selection[t] || 0;
+  if (s === 1) { $b.addClass("sel2").append('<span class="tag">×2</span>'); }
+  else if (s === 2) { $b.addClass("sel4").append('<span class="tag gold">×4</span>'); }
+}
+
+/* ---------- Interaction ---------- */
+$(document).on("click", ".tbtn", function () {
+  if (answered) return;
+  const t = $(this).data("type");
+  const cur = selection[t] || 0;
+  if (level === 1) {
+    selection[t] = cur === 1 ? 0 : 1;
+  } else {
+    selection[t] = (cur + 1) % 3; // 0 -> 1(x2) -> 2(x4) -> 0
+  }
+  paintButton(t);
+});
+
+$("#submitBtn").on("click", function () {
+  if (answered) return;
+  answered = true;
+  const two = currentAnswer.two, four = currentAnswer.four;
+  let perfect = true;
+
+  TYPES.forEach(t => {
+    const $b = $('.tbtn[data-type="' + t + '"]');
+    const picked = selection[t] || 0;      // 0/1/2
+    let expected = 0;
+    if (four.has(t)) expected = 2;
+    else if (two.has(t)) expected = 1;
+
+    $b.find(".tag").remove();
+    if (expected > 0) {
+      $b.append('<span class="tag' + (expected === 2 ? ' gold' : '') + '">×' + (expected === 2 ? 4 : 2) + '</span>');
+    }
+
+    if (picked === expected) {
+      if (expected > 0) $b.addClass("correct").append('<span class="mark">✓</span>');
+      else $b.addClass("dim");
+    } else {
+      perfect = false;
+      if (picked > 0) $b.addClass("wrong").append('<span class="mark">✗</span>');
+      if (expected > 0) $b.addClass("missed");
+    }
+  });
+
+  showFeedback(perfect, two, four);
+
+  if (perfect) { streak++; } else { streak = 0; }
+  $("#streak").text(streak);
+
+  $("#submitBtn").prop("disabled", true);
+  $("#nextBtn").prop("disabled", false);
+});
+
+function chip(t, label) {
+  return '<span class="chip" style="background:' + COLORS[t] + '">' + t + (label ? " " + label : "") + '</span>';
+}
+
+function showFeedback(perfect, two, four) {
+  const $fb = $("#feedback");
+  let html = "";
+  if (perfect) {
+    html += '<h3>✅ Perfect!</h3>';
+  } else {
+    html += '<h3>❌ Not quite — here are the correct answers:</h3>';
+  }
+  if (level === 2) {
+    html += '<div class="row"><b>4× (double weak):</b> ' +
+      (four.size ? [...four].map(t => chip(t)).join("") : '<span style="color:var(--muted)">none</span>') + '</div>';
+    html += '<div class="row"><b>2× (weak):</b> ' +
+      (two.size ? [...two].map(t => chip(t)).join("") : '<span style="color:var(--muted)">none</span>') + '</div>';
+  } else {
+    html += '<div class="row"><b>2× super effective:</b> ' +
+      (two.size ? [...two].map(t => chip(t)).join("") : '<span style="color:var(--muted)">none</span>') + '</div>';
+  }
+  $fb.html(html).addClass("show").addClass(perfect ? "ok" : "no");
+}
+
+$("#nextBtn").on("click", function () {
+  idx++;
+  if (idx >= queue.length) {
+    $("#roundmsg").text("🎉 Round complete! Starting a new shuffled round…");
+    buildRound();
+  }
+  resetSelection();
+  renderPrompt();
+});
+
+$(".levels button").on("click", function () {
+  const lv = parseInt($(this).data("level"), 10);
+  if (lv === level) return;
+  level = lv;
+  $(".levels button").removeClass("active");
+  $(this).addClass("active");
+  streak = 0;
+  $("#streak").text(streak);
+  buildRound();
+  resetSelection();
+  renderPrompt();
+});
+
+/* ---------- Init ---------- */
+renderGrid();
+buildRound();
+resetSelection();
+renderPrompt();
+</script>
+</body>
+</html>
