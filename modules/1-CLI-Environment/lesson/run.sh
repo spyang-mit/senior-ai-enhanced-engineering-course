@@ -7,8 +7,11 @@
 #   lesson check      verify your work; on success, advance
 #   lesson hint       reveal the next hint for this task
 #   lesson skip       move on without checking (unblock yourself)
+#   lesson jump N     go straight to task N (handy for testing/review)
 #   lesson reset      start the whole lesson over
 #   lesson map        list every task and your progress
+#
+# Type `exit` at any time to leave the container (it self-destructs).
 #
 # Between commands you run REAL shell commands. `lesson check` inspects the
 # real result (file modes, env vars, tarballs, the backup host) — there is no
@@ -121,7 +124,8 @@ all in a container you can throw away without a second thought.
 
 Next: the graded project in README.md, and quizzes/module-1-quiz.md.
 
-Type  lesson reset  to run the whole thing again from scratch.
+Type  lesson reset  to run the whole thing again from scratch,
+or    exit          to leave the container (it self-destructs).
 EOF
 }
 
@@ -138,9 +142,10 @@ ${C_BOLD}rm -rf${C_RESET} whatever you like; exit and re-enter for a clean slate
 
 Your guide is the ${C_BOLD}lesson${C_RESET} command:
 
-  ${C_BOLD}lesson next${C_RESET}    what to do next        ${C_BOLD}lesson hint${C_RESET}   a nudge
-  ${C_BOLD}lesson check${C_RESET}   verify your work       ${C_BOLD}lesson map${C_RESET}    see all tasks
-  ${C_BOLD}lesson skip${C_RESET}    move on anyway         ${C_BOLD}lesson reset${C_RESET}  start over
+  ${C_BOLD}lesson next${C_RESET}    what to do next        ${C_BOLD}lesson hint${C_RESET}     a nudge
+  ${C_BOLD}lesson check${C_RESET}   verify your work       ${C_BOLD}lesson map${C_RESET}      see all tasks
+  ${C_BOLD}lesson skip${C_RESET}    move on anyway         ${C_BOLD}lesson jump N${C_RESET}   go to task N
+  ${C_BOLD}lesson reset${C_RESET}   start over             ${C_BOLD}exit${C_RESET}            leave (self-destructs)
 
 Type ${C_BOLD}lesson next${C_RESET} to begin.
 EOF
@@ -152,6 +157,14 @@ case "${1:-next}" in
   hint)                      do_hint ;;
   skip)                      set_cur $(( $(cur) + 1 )); info "Skipped."; show_task ;;
   map | list)                do_map ;;
+  jump)
+    n="${2:-}"
+    if [[ "$n" =~ ^[0-9]+$ ]] && (( n >= 1 && n <= TOTAL )); then
+      set_cur "$n"; info "Jumped to task $n."; show_task
+    else
+      echo "Usage: lesson jump <1-$TOTAL>"; exit 2
+    fi
+    ;;
   reset)                     set_cur 1; info "Lesson reset."; show_task ;;
   welcome | start)           welcome ;;
   *) echo "Unknown: $1"; echo "Try: lesson next | check | hint | skip | map | reset"; exit 2 ;;

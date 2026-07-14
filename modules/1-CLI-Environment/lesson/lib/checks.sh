@@ -44,6 +44,15 @@ path_contains() {
   case ":$PATH:" in *":$1:"*) return 0;; *) return 1;; esac
 }
 
+# --- command history --------------------------------------------------------
+
+# Did the learner run a command matching <regex> recently? The sandbox shell is
+# configured (PROMPT_COMMAND='history -a') to flush each command to
+# ~/.bash_history immediately, so this sees commands from the current session.
+history_has() {
+  [ -r "$HOME/.bash_history" ] && grep -Eq -- "$1" "$HOME/.bash_history"
+}
+
 # --- location ---------------------------------------------------------------
 
 cwd_is() { [ "$(pwd -P)" = "$(cd "$1" 2>/dev/null && pwd -P)" ]; }
