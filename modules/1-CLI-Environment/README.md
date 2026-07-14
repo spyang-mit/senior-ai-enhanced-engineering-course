@@ -177,9 +177,17 @@ only *after* your own attempt.
 
 ## Quiz
 
-Test yourself with [`quizzes/module-1-quiz.md`](quizzes/module-1-quiz.md) — reading an
-`ls -al` line, converting between symbolic and octal, and spotting the dangerous line in a
-generated script. Answers are at the bottom.
+Test yourself with the interactive quiz — reading an `ls -al` line, converting between
+symbolic and octal, pipes and redirection, `PATH`, exit codes, and spotting the dangerous
+line in a generated script. Each question grades itself and explains the answer.
+
+It's a standalone HTML page; open it in your browser. On a Mac, from this directory:
+
+```
+open quizzes/module-1-quiz.html
+```
+
+(On Linux: `xdg-open quizzes/module-1-quiz.html`; or just double-click the file.)
 
 ## What's next
 

@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 1 Quiz — The command line &amp; your environment</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --card: #ffffff;
+    --ink: #1c2024;
+    --muted: #5b6570;
+    --border: #dfe3e8;
+    --accent: #2f6fed;
+    --accent-ink: #ffffff;
+    --code-bg: #f0f2f5;
+    --ok-bg: #e7f6ec; --ok-border: #34a853; --ok-ink: #1a6e34;
+    --no-bg: #fdeceb; --no-border: #e0483b; --no-ink: #b02a20;
+    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171a;
+      --card: #1e2226;
+      --ink: #e7ebef;
+      --muted: #9aa4ae;
+      --border: #333a41;
+      --accent: #5b8cff;
+      --accent-ink: #0a0d10;
+      --code-bg: #12151a;
+      --ok-bg: #16281c; --ok-border: #35a558; --ok-ink: #7fd79b;
+      --no-bg: #2a1917; --no-border: #d8564a; --no-ink: #f0a49c;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 18px 80px; }
+  header h1 { font-size: 1.5rem; margin: 0 0 4px; letter-spacing: -.01em; }
+  header p { color: var(--muted); margin: 0 0 18px; }
+  .score {
+    position: sticky; top: 0; z-index: 5;
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 12px 16px; margin: 0 0 22px;
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  }
+  .score .nums { font-weight: 600; }
+  .score .bar { flex: 1 1 140px; height: 8px; background: var(--code-bg); border-radius: 999px; overflow: hidden; min-width: 120px; }
+  .score .bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s ease; }
+  .score button {
+    font: inherit; font-size: .85rem; cursor: pointer;
+    background: transparent; color: var(--accent);
+    border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px;
+  }
+  .score button:hover { border-color: var(--accent); }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    box-shadow: var(--shadow); padding: 18px 18px 6px; margin: 0 0 18px;
+  }
+  .qnum { color: var(--muted); font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .qtext { margin: 4px 0 12px; font-weight: 500; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; margin: 0 0 14px; overflow-x: auto;
+    font: .86rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  .opts { display: grid; gap: 8px; }
+  .opt {
+    display: block; width: 100%; text-align: left; cursor: pointer;
+    font: inherit; color: var(--ink);
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 11px 14px; transition: border-color .12s, background .12s;
+  }
+  .opt code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; font-size: .9em; }
+  .opt:hover:not(:disabled) { border-color: var(--accent); }
+  .opt:disabled { cursor: default; }
+  .opt.correct { background: var(--ok-bg); border-color: var(--ok-border); color: var(--ok-ink); }
+  .opt.wrong   { background: var(--no-bg); border-color: var(--no-border); color: var(--no-ink); }
+  .opt .mark { float: right; font-weight: 700; }
+  .explain {
+    margin: 12px 0 14px; padding: 11px 14px; border-radius: 10px;
+    background: var(--code-bg); border: 1px solid var(--border);
+    color: var(--muted); font-size: .92rem;
+  }
+  .explain code { color: var(--ink); }
+  .explain.show { display: block; }
+  .explain { display: none; }
+  .done {
+    text-align: center; padding: 22px; border-radius: 14px;
+    border: 1px dashed var(--border); color: var(--muted); margin-top: 8px;
+    display: none;
+  }
+  .done.show { display: block; }
+  .done strong { color: var(--ink); font-size: 1.15rem; }
+  footer { color: var(--muted); font-size: .85rem; text-align: center; margin-top: 30px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Module 1 Quiz</h1>
+    <p>The command line &amp; your environment. Pick an answer to see if you're right — and why.</p>
+  </header>
+
+  <div class="score" role="status" aria-live="polite">
+    <span class="nums"><span id="answered">0</span> answered · <span id="correct">0</span> correct</span>
+    <span class="bar"><i id="barfill"></i></span>
+    <button id="reset" type="button">Reset</button>
+  </div>
+
+  <main id="quiz"></main>
+
+  <div class="done" id="done"></div>
+
+  <footer>Best done inside the sandbox habit: when unsure, try it in the throwaway container.</footer>
+</div>
+
+<script>
+const questions = [
+  {
+    q: "Reading this line, who can EXECUTE the file?",
+    code: "-rwxr-x---  1  dev  staff  2048  Jul 13 09:03  deploy.sh",
+    options: [
+      "Only the owner, dev",
+      "The owner dev, and members of the group staff",
+      "Everyone on the system",
+      "Nobody — execute is off"
+    ],
+    answer: 1,
+    explain: "The owner bits are rwx and the group bits are r-x, so dev and anyone in group staff can execute it. Others are ---, so no one else can even read it."
+  },
+  {
+    q: "What is the mode -rwxr-x--- written in octal?",
+    options: ["740", "750", "755", "770"],
+    answer: 1,
+    explain: "r=4, w=2, x=1. rwx = 7, r-x = 5, --- = 0 → 750."
+  },
+  {
+    q: "Which symbolic form equals octal 640?",
+    options: ["rw-r--r--", "rw-r-----", "rw-------", "rwxr-----"],
+    answer: 1,
+    explain: "6 = rw-, 4 = r--, 0 = --- → rw-r----- (owner read/write, group read, others nothing)."
+  },
+  {
+    q: "A file is rw-r--r--. After  chmod g+w,o-r file  its mode is:",
+    options: ["rw-rw-r--", "rw-rw----", "rwxrw----", "rw-r-----"],
+    answer: 1,
+    explain: "g+w adds group write → rw-rw-r--; then o-r removes others' read → rw-rw---- (that's 660)."
+  },
+  {
+    q: "ssh refuses your private key because it is 'too open.' Which command fixes it?",
+    options: ["chmod 644 id_ed25519", "chmod 600 id_ed25519", "chmod 777 id_ed25519", "chmod +x id_ed25519"],
+    answer: 1,
+    explain: "A private key must be readable and writable only by its owner — chmod 600 (rw-------)."
+  },
+  {
+    q: "How do  echo hi > f  and  echo hi >> f  differ?",
+    options: [
+      "No difference",
+      "> appends to the end; >> overwrites",
+      "> overwrites (replaces the whole file); >> appends to the end",
+      "Both delete f"
+    ],
+    answer: 2,
+    explain: "> truncates and replaces the file's contents; >> appends. > is the destructive one — aim it at the wrong file and the old contents are gone."
+  },
+  {
+    q: "What does  grep ERROR server.log | wc -l  do?",
+    options: [
+      "Counts the lines in server.log that contain ERROR",
+      "Prints every ERROR line to the screen",
+      "Counts all lines in server.log",
+      "Deletes the ERROR lines"
+    ],
+    answer: 0,
+    explain: "grep selects the matching lines; the pipe feeds them to wc -l, which counts lines. Net result: how many error lines there are."
+  },
+  {
+    q: "A tool is installed and executable, but typing its name gives 'command not found.' Most likely cause?",
+    options: [
+      "The file is corrupt",
+      "Its directory isn't on your PATH",
+      "You need to run it with sudo",
+      "You're in the wrong shell"
+    ],
+    answer: 1,
+    explain: "The shell only finds commands in the directories listed on $PATH. Inspect it with  echo $PATH  and add the tool's directory if it's missing."
+  },
+  {
+    q: "What's the difference between  NAME=value  and  export NAME=value ?",
+    options: [
+      "Nothing — they're identical",
+      "Only the exported one is visible to programs and scripts the shell launches",
+      "export makes the variable read-only",
+      "export deletes the variable"
+    ],
+    answer: 1,
+    explain: "A plain assignment lives only in the current shell. export marks it for the environment, so child processes (your scripts and programs) inherit it."
+  },
+  {
+    q: "In  tar czf a.tar.gz dir  and  tar xzf a.tar.gz , what do c, x, and z mean?",
+    options: [
+      "c = create, x = extract, z = gzip (de)compress",
+      "c = copy, x = delete, z = zip",
+      "Both extract; z means verbose",
+      "x = create, c = check"
+    ],
+    answer: 0,
+    explain: "c create, x extract, t list; z adds gzip (de)compression. f means 'the archive filename comes next.'"
+  },
+  {
+    q: "You run  alias ll='ls -al'  but it's gone in a new terminal. Why, and how do you keep it?",
+    options: [
+      "Aliases are permanent by default; you hit a bug",
+      "It only lives in that shell session — add the line to ~/.bashrc",
+      "You must chmod the alias to make it stick",
+      "Aliases require sudo"
+    ],
+    answer: 1,
+    explain: "An alias set at the prompt is session-only. Put  alias ll='ls -al'  in ~/.bashrc so every new shell loads it (run  source ~/.bashrc  to apply it now)."
+  },
+  {
+    q: "After running a command,  echo $?  prints 0. That means:",
+    options: [
+      "The command failed",
+      "The command succeeded",
+      "Zero files were changed",
+      "There was no output"
+    ],
+    answer: 1,
+    explain: "Exit code 0 means success; any nonzero value means failure. cmd1 && cmd2 runs cmd2 only on success; cmd1 || cmd2 runs cmd2 only on failure."
+  },
+  {
+    q: "An agent generated this cleanup line:  rm -rf $BUILD_DIR/  — why is it dangerous?",
+    options: [
+      "It isn't; it's perfectly safe",
+      "If $BUILD_DIR is empty or unset it can become  rm -rf /  , and unquoted it splits on spaces — quote it and guard the variable",
+      "rm can never be dangerous",
+      "It just needs sudo to work"
+    ],
+    answer: 1,
+    explain: "Guard and quote it:  : \"${BUILD_DIR:?set me}\"  then  rm -rf -- \"$BUILD_DIR\" . An empty or unquoted variable in  rm -rf  has wiped real systems."
+  }
+];
+
+const quiz = document.getElementById('quiz');
+const answeredEl = document.getElementById('answered');
+const correctEl = document.getElementById('correct');
+const barfill = document.getElementById('barfill');
+const doneEl = document.getElementById('done');
+let answered = 0, correct = 0;
+
+function build() {
+  quiz.innerHTML = '';
+  answered = 0; correct = 0;
+  updateScore();
+  doneEl.className = 'done';
+  doneEl.textContent = '';
+
+  questions.forEach((item, qi) => {
+    const card = document.createElement('section');
+    card.className = 'card';
+
+    const num = document.createElement('div');
+    num.className = 'qnum';
+    num.textContent = 'Question ' + (qi + 1) + ' of ' + questions.length;
+    card.appendChild(num);
+
+    const qt = document.createElement('p');
+    qt.className = 'qtext';
+    qt.textContent = item.q;
+    card.appendChild(qt);
+
+    if (item.code) {
+      const pre = document.createElement('pre');
+      pre.textContent = item.code;
+      card.appendChild(pre);
+    }
+
+    const opts = document.createElement('div');
+    opts.className = 'opts';
+    const buttons = [];
+    item.options.forEach((text, oi) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'opt';
+      b.textContent = text;
+      b.addEventListener('click', () => choose(qi, oi, buttons, expl));
+      opts.appendChild(b);
+      buttons.push(b);
+    });
+    card.appendChild(opts);
+
+    const expl = document.createElement('div');
+    expl.className = 'explain';
+    expl.textContent = item.explain;
+    card.appendChild(expl);
+
+    quiz.appendChild(card);
+  });
+}
+
+function choose(qi, oi, buttons, expl) {
+  if (buttons[0].disabled) return;         // already answered
+  const right = questions[qi].answer;
+  buttons.forEach((b, i) => {
+    b.disabled = true;
+    if (i === right) {
+      b.classList.add('correct');
+      b.appendChild(mark('✓'));
+    }
+    if (i === oi && oi !== right) {
+      b.classList.add('wrong');
+      b.appendChild(mark('✗'));
+    }
+  });
+  expl.classList.add('show');
+  answered++;
+  if (oi === right) correct++;
+  updateScore();
+}
+
+function mark(sym) {
+  const s = document.createElement('span');
+  s.className = 'mark';
+  s.textContent = sym;
+  return s;
+}
+
+function updateScore() {
+  answeredEl.textContent = answered;
+  correctEl.textContent = correct;
+  barfill.style.width = (answered / questions.length * 100) + '%';
+  if (answered === questions.length) {
+    const pct = Math.round(correct / questions.length * 100);
+    let note = pct === 100 ? "Perfect — you've got this." :
+               pct >= 70 ? "Solid. Revisit the ones you missed." :
+               "Worth another pass — re-read the module and try again.";
+    doneEl.innerHTML = '';
+    const strong = document.createElement('strong');
+    strong.textContent = 'Score: ' + correct + ' / ' + questions.length + ' (' + pct + '%)';
+    doneEl.appendChild(strong);
+    doneEl.appendChild(document.createElement('br'));
+    doneEl.appendChild(document.createTextNode(note));
+    doneEl.classList.add('show');
+  }
+}
+
+document.getElementById('reset').addEventListener('click', build);
+build();
+</script>
+</body>
+</html>
