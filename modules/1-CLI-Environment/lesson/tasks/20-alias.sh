@@ -2,15 +2,15 @@
 TASK_TITLE="Create a permanent alias"
 TASK_CAT="Aliases & dotfiles"
 TASK_BODY="An alias is a shortcut for a longer command:
-  alias ll='ls -al'    now 'll' means 'ls -al'
+  alias name='command'      e.g. alias ll='ls -al' makes 'll' run 'ls -al'
 
-But an alias set this way vanishes when you close the shell. To make it
-permanent, add it to a 'dotfile' that runs every time a shell starts —
-~/.bashrc. Append the alias to it:
-  echo \"alias ll='ls -al'\" >> ~/.bashrc
-Then load it into your current shell without reopening:
-  source ~/.bashrc"
-TASK_TRY="echo \"alias ll='ls -al'\" >> ~/.bashrc"
+But an alias typed at the prompt vanishes when you close the shell. To make it
+permanent, put the same alias line in a 'dotfile' that runs at every shell
+start — ~/.bashrc — then reload it in your current shell with 'source ~/.bashrc'.
+
+Your task: make 'll' a permanent alias for 'ls -al'. It has to survive opening
+a new shell, so it needs to live in ~/.bashrc."
+TASK_TRY=""
 TASK_WHY="Dotfiles (.bashrc, .profile, .gitconfig, .ssh/config) are where you
 encode your setup so it follows you to every machine. Engineers keep them in
 a git repo. (Aliases live only in your shell, so this check reads .bashrc —

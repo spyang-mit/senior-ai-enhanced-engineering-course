@@ -7,10 +7,10 @@ file has an owner (a user) and a group.
   chgrp group file     change the owning group
   chown user:group f   change both at once
 
-You belong to a group called 'teammates' (run 'groups' to see). Hand
-shared/report.txt to that group so your teammates' group-write permission
-from earlier actually applies to them:"
-TASK_TRY="chgrp teammates shared/report.txt"
+Your task: you belong to a group called 'teammates' (run 'groups' to see).
+Hand shared/report.txt to that group, so the group-write permission you set
+earlier actually applies to your teammates."
+TASK_TRY=""
 TASK_WHY="Group-write (from the last task) only helps if the file is owned by
 the RIGHT group. Ownership + permission bits work together — miss either and
 access silently breaks."

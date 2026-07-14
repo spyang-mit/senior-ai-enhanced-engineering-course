@@ -3,12 +3,13 @@ TASK_TITLE="Copy files over ssh with scp"
 TASK_CAT="Moving bytes: scp"
 TASK_BODY="scp copies files between machines over the same secure ssh channel.
 The syntax mirrors cp, but a remote side looks like user@host:path
-  scp file.txt backup@localhost:~/backups/     local -> remote
-  scp -r dir   backup@localhost:~/backups/     a whole directory (-r)
-  scp backup@localhost:~/f.txt .               remote -> local
+  scp file.txt user@host:~/dest/     local -> remote
+  scp -r dir   user@host:~/dest/     a whole directory (needs -r)
+  scp user@host:~/f.txt .            remote -> local
 
-Copy your notes directory to the backup host:"
-TASK_TRY="scp -r notes backup@localhost:~/backups/"
+Your task: copy your whole notes directory to the backup host — into ~/backups
+on backup@localhost."
+TASK_TRY=""
 TASK_WHY="scp is the simplest way to 'move bytes to another machine', and it
 inherits ssh's security and your key. Your backup-script project ends with an
 scp exactly like this to ship the archive off the box."

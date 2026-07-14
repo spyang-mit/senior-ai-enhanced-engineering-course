@@ -6,8 +6,9 @@ flag lists contents without writing anything to disk:
   tar tf  archive.tar       list a plain archive
   tar tzf archive.tar.gz    list a gzipped archive
 
-Peek inside the archive you just made and save the file list:"
-TASK_TRY="tar tzf notes.tar.gz > contents.txt"
+Your task: without extracting anything, list what's inside the notes.tar.gz
+archive you just made, and save that file list into contents.txt."
+TASK_TRY=""
 TASK_WHY="Always list an archive before extracting a stranger's tarball — a
 malicious one can contain absolute paths or '../' entries that write OUTSIDE
 your target directory. 'tar t' is your safety check."

@@ -4,9 +4,13 @@ FROM debian:stable-slim
 
 # Tools the lesson uses. openssh-server gives us a genuine ssh/scp target
 # (backup@localhost); the rest are the everyday coreutils/tar/grep/less.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        bash coreutils procps grep gzip tar less nano \
+# The Debian slim image strips man pages via a dpkg exclude, so we remove that
+# exclude and reinstall coreutils — otherwise the `man ls` task has no manual.
+RUN rm -f /etc/dpkg/dpkg.cfg.d/docker* \
+    && apt-get update && apt-get install -y --no-install-recommends \
+        bash coreutils procps grep gzip tar less nano man-db manpages \
         openssh-server openssh-client ca-certificates \
+    && apt-get install -y --reinstall --no-install-recommends coreutils \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /run/sshd
 
@@ -30,8 +34,11 @@ COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN ln -sf /opt/lesson/run.sh /usr/local/bin/lesson \
     && chmod +x /opt/lesson/run.sh /usr/local/bin/entrypoint.sh
 
-# Show the welcome banner once per sandbox shell.
-RUN printf '\n# Module 1 sandbox greeting\nif [ -z "${LESSON_BANNER_SHOWN:-}" ]; then\n  export LESSON_BANNER_SHOWN=1\n  lesson welcome\nfi\n' >> /home/dev/.bashrc \
+# Flush each command to ~/.bash_history immediately, so `lesson check` can tell
+# which commands the learner has run this session (used by the `man` task).
+# Then show the welcome banner once per sandbox shell.
+RUN printf '\n# Module 1 sandbox: record history as we go\nshopt -s histappend\nPROMPT_COMMAND="history -a; ${PROMPT_COMMAND:-}"\n' >> /home/dev/.bashrc \
+    && printf '\n# Module 1 sandbox greeting\nif [ -z "${LESSON_BANNER_SHOWN:-}" ]; then\n  export LESSON_BANNER_SHOWN=1\n  lesson welcome\nfi\n' >> /home/dev/.bashrc \
     && chown dev:dev /home/dev/.bashrc
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

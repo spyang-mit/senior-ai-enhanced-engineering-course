@@ -5,10 +5,12 @@ TASK_BODY="Look at secret.env (cat secret.env) — it holds fake
 API keys and a database password. Apps load config like this from a '.env'
 file at startup.
 
-Rule: a .env / secrets file NEVER goes into git. The way you enforce that is
-a .gitignore file listing what git must ignore. Create one in your playground
-that ignores the secret:"
-TASK_TRY="echo 'secret.env' > .gitignore"
+Rule: a .env / secrets file NEVER goes into git. The way you enforce that is a
+.gitignore file listing the names git must ignore.
+
+Your task: create a .gitignore in your playground that makes git ignore
+secret.env."
+TASK_TRY=""
 TASK_WHY="Leaked credentials in a public git repo are one of the most common
 real-world breaches — bots scan GitHub for them within seconds of a push.
 '.gitignore' is the cheap, boring habit that prevents it."

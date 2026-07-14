@@ -35,6 +35,9 @@ chmod 644 /home/dev/playground/secret.env          # task: chmod 600
 chmod 755 /home/dev/playground/bin/greet           # task: put on PATH
 chown -R dev:dev /home/dev/playground
 
+# Age this file so the `touch` task can demonstrate a timestamp update.
+touch -d "2020-01-01 00:00:00" /home/dev/playground/stale.txt
+
 # 4. Reset guided-lesson progress for a clean start.
 rm -rf /home/dev/.lesson
 
@@ -42,7 +45,11 @@ rm -rf /home/dev/.lesson
 #    With arguments, run them as 'dev' instead (used for testing and for
 #    one-off commands like: docker run --rm IMAGE lesson map).
 if [ "$#" -gt 0 ]; then
-  exec su - dev -c "cd ~/playground && $*"
+  # Shell-quote each argument back into a single command string so both the
+  # `cd` and the exact argument boundaries survive (printf %q handles spaces
+  # and quotes). Used for testing and one-offs like: docker run IMAGE lesson map
+  cmd="$(printf '%q ' "$@")"
+  exec su - dev -c "cd ~/playground && exec $cmd"
 else
   exec su - dev -c "cd ~/playground && exec bash"
 fi

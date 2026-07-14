@@ -1,0 +1,3 @@
+I am an old file. Run 'ls -l stale.txt' to see my modified date — it's from
+years ago. Then 'touch stale.txt' and look again: touch updates my timestamp
+to now, without changing these contents.

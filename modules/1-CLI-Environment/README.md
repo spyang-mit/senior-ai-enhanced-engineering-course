@@ -56,11 +56,19 @@ lesson check    # verify your work; on success, advance
 lesson hint     # a nudge (ask again for a bigger one)
 lesson map      # see all tasks and your progress
 lesson skip     # move on without checking (unblock yourself)
+lesson jump N   # go straight to task N (handy for review)
 lesson reset    # start the whole lesson over
+exit            # leave the container (it self-destructs)
 ```
 
 Do a task, run `lesson check`, repeat. When you're done, type `exit` — the container
 self-destructs. Nothing you did leaks onto your real machine.
+
+The early tasks deliberately teach navigation the way a *human* actually works: you look
+around with `ls`, then move **relative** to where you are (`cd projects`, `cd ..`) using
+**tab-completion** — not by typing long absolute paths from the root the way an AI would.
+Once you're back in `~/playground`, the rest of the commands are short and relative too
+(`ls -al > listing.txt`, `chmod u+x scripts/deploy.sh`).
 
 ---
 

@@ -7,10 +7,9 @@ package a directory for backup or transfer. Decode the flags:
   v = verbose (print names)   f = the archive FILE comes next
   z = gzip-compress (.tar.gz)
 
-Create a COMPRESSED archive of your notes directory (you're in ~/playground,
-so just name it):
-  tar czf notes.tar.gz notes"
-TASK_TRY="tar czf notes.tar.gz notes"
+Your task: create a COMPRESSED (gzipped) archive named notes.tar.gz that
+contains your notes directory."
+TASK_TRY=""
 TASK_WHY="Read 'czf' as 'create, gzip, file'. Add 'v' (tar cvzf) any time you
 want to watch what's being added. This is exactly what your backup-script
 project will do to a directory before shipping it."

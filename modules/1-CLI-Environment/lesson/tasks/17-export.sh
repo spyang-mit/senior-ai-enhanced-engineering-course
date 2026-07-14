@@ -6,9 +6,11 @@ variable:
   NAME=value          exists only in THIS shell
   export NAME=value   is passed down to every program the shell launches
 
-Programs (and scripts) only see EXPORTED variables. Export one that a deploy
-script might read — name it DEPLOY_ENV with the value staging:"
-TASK_TRY="export DEPLOY_ENV=staging"
+Programs (and scripts) only see EXPORTED variables.
+
+Your task: export a variable named DEPLOY_ENV with the value staging (the kind
+of setting a deploy script would read)."
+TASK_TRY=""
 TASK_WHY="This is why 'export' matters: the 'lesson' command you're about to
 run is a child process, and it can only see DEPLOY_ENV because you exported
 it. Forget the export, and your script gets an empty value."

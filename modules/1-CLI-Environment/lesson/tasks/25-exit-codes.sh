@@ -9,16 +9,16 @@ You chain on it:
   cmd1 && cmd2    run cmd2 only if cmd1 SUCCEEDED
   cmd1 || cmd2    run cmd2 only if cmd1 FAILED
 
-Run a command that fails, capture its exit code to a file:
-  ls /does/not/exist 2>/dev/null ; echo \$? > code.txt"
-TASK_TRY="ls /does/not/exist 2>/dev/null ; echo \$? > code.txt"
+Your task: run any command that FAILS, then capture its exit code (\$?) into a
+file called code.txt."
+TASK_TRY=""
 TASK_WHY="Exit codes are how scripts know whether a step worked. Your backup
 project will check \$? after tar and after scp so it can report real success
-or failure instead of blindly claiming 'done'. '2>/dev/null' throws away the
-error message by redirecting stderr."
+or failure instead of blindly claiming 'done'. Tip: '2>/dev/null' throws away a
+command's error message by redirecting stderr."
 TASK_HINTS=(
-  "Run any failing command, then: echo \$? > code.txt"
-  "Run the exact command under 'Try:'."
+  "Pick a command that can't work (e.g. listing a path that doesn't exist), then: echo \$? > code.txt"
+  "Run: ls /does/not/exist 2>/dev/null ; echo \$? > code.txt"
 )
 check() {
   local f="$HOME/playground/code.txt"
