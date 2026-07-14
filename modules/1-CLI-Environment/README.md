@@ -149,15 +149,18 @@ extracting it. Inspect the actual file mode after a `chmod`, not just that the c
 
 ## Project — an audited backup script
 
-Your deliverable is the script you build in the final lesson task: **`backup.sh`**, which
+The guided lesson ends by teaching you to write and run a simple executable script (shebang →
+`chmod +x` → `./script`). The module's **project** takes that skill further, on your own:
+build **`backup.sh`**, which
 
 1. archives a directory with `tar` (compressed, `.tar.gz`),
 2. ships it to another machine with `scp` over `ssh`, and
 3. **reports success or failure via exit codes** — it checks that each step actually worked
    instead of blindly printing "done."
 
-The lesson's last `check` confirms your script ran and a real archive landed on the backup
-host. Build it yourself first. A fully-audited reference is in
+Do it inside the sandbox (the `backup@localhost` host is still there), and confirm a real
+archive landed with `ssh backup@localhost 'ls -al ~/backups'`. Build it yourself first. A
+fully-audited reference is in
 [`sample-solution/backup.sh`](sample-solution/backup.sh), and the prompt I used to have an
 agent draft it (and what I made it fix) is in
 [`sample-solution/original_prompt.txt`](sample-solution/original_prompt.txt) — read those

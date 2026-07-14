@@ -45,7 +45,7 @@ set_cur() { echo "$1" > "$STATE_FILE"; echo 0 > "$HINT_FILE"; }
 load_task() {
   local n=$1
   TASK_TITLE=; TASK_CAT=; TASK_BODY=; TASK_TRY=; TASK_WHY=; TASK_HINTS=()
-  unset -f check 2>/dev/null || true
+  unset -f check setup 2>/dev/null || true
   # shellcheck source=/dev/null
   source "${TASKS[$((n - 1))]}"
 }
@@ -54,6 +54,10 @@ show_task() {
   local n; n=$(cur)
   if (( n > TOTAL )); then finished; return; fi
   load_task "$n"
+  # A task may define setup() to prepare its starting state (e.g. create a
+  # file to operate on) so it works even if the learner jumped straight here.
+  # It runs only when a task is DISPLAYED, never during a check.
+  declare -F setup >/dev/null && setup
   echo
   rule
   printf '%s\n' "${C_BOLD}Task ${n}/${TOTAL} · ${TASK_CAT}${C_RESET}"
@@ -119,10 +123,11 @@ finished() {
   cat <<EOF
 
 You navigated a real Unix filesystem, bent its permissions to your will,
-moved bytes with tar and scp over ssh, and built an audited backup script —
-all in a container you can throw away without a second thought.
+moved bytes with tar and scp over ssh, and wrote and ran your first shell
+script — all in a container you can throw away without a second thought.
 
-Next: the graded project in README.md, and quizzes/module-1-quiz.md.
+Next: the graded project in README.md (an audited backup script that puts
+tar + scp + exit codes together), and quizzes/module-1-quiz.md.
 
 Type  lesson reset  to run the whole thing again from scratch,
 or    exit          to leave the container (it self-destructs).

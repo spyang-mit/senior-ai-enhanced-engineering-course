@@ -7,7 +7,8 @@ TASK_BODY="'rm' removes files. There is no recycle bin — rm is forever.
   rm -r dir     delete a directory and everything in it (recursive)
   rm -rf dir    recursive + force, no prompts — the dangerous one
 
-Your task: you created hello.txt earlier — delete it."
+Your task: a throwaway file 'hello.txt' is sitting in your playground —
+delete it."
 TASK_TRY=""
 TASK_WHY="This is THE command to read twice in AI-generated scripts. 'rm -rf
 \$DIR/' with an empty or wrong \$DIR has wiped real systems. Danger signs:
@@ -17,6 +18,10 @@ TASK_HINTS=(
   "Just remove the one file. (Try 'rm -i' to see the confirm prompt.)"
   "Run: rm hello.txt"
 )
+# Ensure there's something to delete, even if the learner jumped straight here.
+setup() {
+  [ -e "$HOME/playground/hello.txt" ] || echo 'hello from the shell' > "$HOME/playground/hello.txt"
+}
 check() {
   if ! file_exists "$HOME/playground/hello.txt"; then
     pass "hello.txt is gone — and there's no undo. Respect rm."
