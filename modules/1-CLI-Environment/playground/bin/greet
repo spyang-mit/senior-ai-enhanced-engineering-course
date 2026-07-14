@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# A ready-made command that lives OUTSIDE the default PATH. You'll add its
+# directory (~/playground/bin) to PATH so you can run it just by typing 'greet'.
+echo "👋 Hello from a command on your PATH! You found me at: $(command -v greet)"

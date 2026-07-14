@@ -1,0 +1,40 @@
+The prompt I gave the agent
+===========================
+
+"Write a bash script backup.sh that takes a source directory and a
+scp-style destination (user@host:remote-dir), tars and gzips the source,
+and copies the archive to the destination over ssh. It should report
+whether it succeeded."
+
+
+What the first draft got wrong (and how I noticed)
+==================================================
+
+Directing the AI is only half the job — verifying it is the other half.
+Reading the draft line by line (🎯 Direct the AI) surfaced these:
+
+1. No `set -euo pipefail`. The draft ran `tar ...` then `scp ...`
+   unconditionally, so if tar failed it would still try to scp a missing
+   file and then print "Backup complete." It reported success on failure.
+   FIX: add `set -euo pipefail` and check the exit code after each step.
+
+2. Unquoted variables: `tar czf $ARCHIVE $SRC`. A source path with a space
+   would break apart into multiple arguments. Worse, if $SRC were somehow
+   empty, some commands would operate on the wrong target.
+   FIX: quote every expansion — "$ARCHIVE", "$SRC", "$DEST".
+
+3. No check that the source directory exists. tar's error would be cryptic
+   and the script would push on.
+   FIX: validate `[ -d "$SRC" ]` up front with a clear message.
+
+4. It hard-coded the archive name, so two runs in the same session
+   overwrote each other.
+   FIX: timestamp the filename.
+
+How I verified the final version
+================================
+
+Ran it in the throwaway sandbox against backup@localhost, then confirmed
+the archive actually arrived:  ssh backup@localhost 'ls -al ~/backups'
+I also ran it once with a bogus source directory to confirm it exits
+non-zero with a useful message instead of falsely claiming success.

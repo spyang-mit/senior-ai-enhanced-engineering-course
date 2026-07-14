@@ -1,0 +1,5 @@
+Playground to-do list
+======================
+- learn cd, ls, and friends
+- understand file permissions
+- practice tar and scp

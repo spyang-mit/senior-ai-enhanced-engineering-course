@@ -1,0 +1,3 @@
+2026-06-01 00:00:00 INFO  archived log line one
+2026-06-01 00:00:05 WARN  archived log line two
+2026-06-01 00:00:09 INFO  archived log line three

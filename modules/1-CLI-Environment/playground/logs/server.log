@@ -1,0 +1,15 @@
+2026-07-13 09:00:01 INFO  server starting on :8080
+2026-07-13 09:00:02 INFO  connected to database
+2026-07-13 09:01:11 INFO  GET /health 200
+2026-07-13 09:02:45 ERROR upstream timeout talking to payments
+2026-07-13 09:02:46 INFO  retrying payments request
+2026-07-13 09:03:10 INFO  GET /api/users 200
+2026-07-13 09:04:22 ERROR unhandled exception in /api/orders
+2026-07-13 09:04:23 INFO  request id 8831 failed
+2026-07-13 09:05:00 INFO  GET /health 200
+2026-07-13 09:06:37 ERROR database connection reset
+2026-07-13 09:06:40 INFO  reconnected to database
+2026-07-13 09:07:59 INFO  GET /api/users 200
+2026-07-13 09:09:12 ERROR out of memory in image resizer
+2026-07-13 09:09:15 INFO  worker restarted
+2026-07-13 09:10:00 INFO  GET /health 200
