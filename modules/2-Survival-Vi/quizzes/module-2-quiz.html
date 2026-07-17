@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 2 Quiz — Survival vi</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --ink: #1c2024; --muted: #5b6570;
+    --border: #dfe3e8; --accent: #2f6fed; --code-bg: #f0f2f5;
+    --ok-bg: #e7f6ec; --ok-border: #34a853; --ok-ink: #1a6e34;
+    --no-bg: #fdeceb; --no-border: #e0483b; --no-ink: #b02a20;
+    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171a; --card: #1e2226; --ink: #e7ebef; --muted: #9aa4ae;
+      --border: #333a41; --accent: #5b8cff; --code-bg: #12151a;
+      --ok-bg: #16281c; --ok-border: #35a558; --ok-ink: #7fd79b;
+      --no-bg: #2a1917; --no-border: #d8564a; --no-ink: #f0a49c;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 18px 80px; }
+  header h1 { font-size: 1.5rem; margin: 0 0 4px; letter-spacing: -.01em; }
+  header p { color: var(--muted); margin: 0 0 18px; }
+  .score { position: sticky; top: 0; z-index: 5; background: var(--card);
+    border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow);
+    padding: 12px 16px; margin: 0 0 22px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .score .nums { font-weight: 600; }
+  .score .bar { flex: 1 1 140px; height: 8px; background: var(--code-bg); border-radius: 999px; overflow: hidden; min-width: 120px; }
+  .score .bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s ease; }
+  .score button { font: inherit; font-size: .85rem; cursor: pointer; background: transparent;
+    color: var(--accent); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; }
+  .score button:hover { border-color: var(--accent); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    box-shadow: var(--shadow); padding: 18px 18px 6px; margin: 0 0 18px; }
+  .qnum { color: var(--muted); font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .qtext { margin: 4px 0 12px; font-weight: 500; }
+  .opts { display: grid; gap: 8px; }
+  .opt { display: block; width: 100%; text-align: left; cursor: pointer; font: inherit; color: var(--ink);
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px;
+    transition: border-color .12s, background .12s; }
+  .opt:hover:not(:disabled) { border-color: var(--accent); }
+  .opt:disabled { cursor: default; }
+  .opt.correct { background: var(--ok-bg); border-color: var(--ok-border); color: var(--ok-ink); }
+  .opt.wrong { background: var(--no-bg); border-color: var(--no-border); color: var(--no-ink); }
+  .opt .mark { float: right; font-weight: 700; }
+  .explain { margin: 12px 0 14px; padding: 11px 14px; border-radius: 10px; background: var(--code-bg);
+    border: 1px solid var(--border); color: var(--muted); font-size: .92rem; display: none; }
+  .explain.show { display: block; }
+  .explain code { color: var(--ink); }
+  kbd { font: .85em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    background: var(--code-bg); border: 1px solid var(--border); border-bottom-width: 2px;
+    border-radius: 5px; padding: 1px 6px; }
+  .done { text-align: center; padding: 22px; border-radius: 14px; border: 1px dashed var(--border);
+    color: var(--muted); margin-top: 8px; display: none; }
+  .done.show { display: block; }
+  .done strong { color: var(--ink); font-size: 1.15rem; }
+  footer { color: var(--muted); font-size: .85rem; text-align: center; margin-top: 30px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Module 2 Quiz — Survival vi</h1>
+    <p>Enough vi to edit a file, save it, and (above all) escape it. Pick an answer to see if you're right.</p>
+  </header>
+
+  <div class="score" role="status" aria-live="polite">
+    <span class="nums"><span id="answered">0</span> answered · <span id="correct">0</span> correct</span>
+    <span class="bar"><i id="barfill"></i></span>
+    <button id="reset" type="button">Reset</button>
+  </div>
+
+  <main id="quiz"></main>
+  <div class="done" id="done"></div>
+  <footer>The one that saves you: press Esc, then type :q! and Enter to quit without saving.</footer>
+</div>
+
+<script>
+const questions = [
+  {
+    q: "vi has you trapped. You've made changes you do NOT want to keep, and you just want out. What do you do?",
+    options: ["Press Ctrl-C a bunch of times", "Type :w then :q", "Press Esc, then type :q! and press Enter", "Close the terminal window"],
+    answer: 2,
+    explain: "Esc gets you to normal mode; :q! quits and discards your changes. This is THE survival command — you're never stuck."
+  },
+  {
+    q: "You open a file, start typing, and the letters trigger strange jumps and deletions instead of appearing. Why?",
+    options: ["The file is read-only", "You're in normal mode, where letters are commands — press i to start typing text", "vi is broken", "You need to run it with sudo"],
+    answer: 1,
+    explain: "vi starts in normal mode, where keys are commands (dd, x, …). Press i (or a) to enter insert mode; you'll see -- INSERT -- at the bottom."
+  },
+  {
+    q: "What does pressing i do?",
+    options: ["Saves the file", "Enters insert mode, typing text before the cursor", "Deletes the current line", "Quits vi"],
+    answer: 1,
+    explain: "i = insert before the cursor. a inserts after it; A inserts at the end of the line. Esc returns to normal mode."
+  },
+  {
+    q: "You've made your edits. How do you save AND quit?",
+    options: [":sq", ":wq", ":save", "Ctrl-S"],
+    answer: 1,
+    explain: ":wq means write (save) then quit. ZZ does the same thing. :w saves without quitting."
+  },
+  {
+    q: "Which command deletes the entire current line?",
+    options: ["x", "dl", "dd", "D"],
+    answer: 2,
+    explain: "dd deletes the whole line (and cuts it into a buffer, so you can paste it). x deletes one character; D deletes from the cursor to the end of the line."
+  },
+  {
+    q: "How do you delete just the single character under the cursor?",
+    options: ["dd", "x", "dw", "cc"],
+    answer: 1,
+    explain: "x deletes the character under the cursor. dw deletes to the end of the word; dd deletes the whole line."
+  },
+  {
+    q: "You just made a change you regret (still in vi, not saved yet). How do you undo it?",
+    options: ["Ctrl-Z", "u", "Esc twice", ":undo-please"],
+    answer: 1,
+    explain: "u undoes the last change — press it repeatedly to go further back. Ctrl-R redoes. (Ctrl-Z would suspend the whole program, not undo an edit.)"
+  },
+  {
+    q: "Copy the current line and paste a copy just below it. Which keys?",
+    options: ["dd then p", "yy then p", "cc then p", "Ctrl-C then Ctrl-V"],
+    answer: 1,
+    explain: "yy yanks (copies) the line; p pastes it below. Note: dd then p would MOVE the line (dd cuts), not copy it."
+  },
+  {
+    q: "Jump straight to the LAST line of the file:",
+    options: ["G", "gg", "$", ":0"],
+    answer: 0,
+    explain: "G goes to the last line; gg goes to the first. ($ is end of the current line; :N jumps to line N.)"
+  },
+  {
+    q: "Search forward for the word 'banana':",
+    options: ["find banana", "/banana then Enter", ":search banana", "grep banana"],
+    answer: 1,
+    explain: "/banana then Enter jumps to the next match. Press n for the next match, N for the previous one."
+  },
+  {
+    q: "You want to replace a whole word — delete it and immediately start typing the new one. Best single command?",
+    options: ["dw", "x then i", "cw", "rw"],
+    answer: 2,
+    explain: "cw ('change word') deletes to the end of the word and drops you into insert mode so you can type the replacement, then Esc. C does the same to the end of the line."
+  },
+  {
+    q: "How do a and i differ?",
+    options: ["No difference", "a inserts AFTER the cursor; i inserts BEFORE it", "a appends to the file; i inserts a file", "a is for admins only"],
+    answer: 1,
+    explain: "Both enter insert mode; a starts one character to the right of the cursor, i starts right at it. A jumps to the end of the line first."
+  },
+  {
+    q: "Why bother learning survival vi at all?",
+    options: ["It's required by law", "git opens vi by default to write commit messages — and vi is on every Unix server you'll ssh into", "vi is the only text editor that exists", "To look impressive"],
+    answer: 1,
+    explain: "The moment git (or crontab, or a server config tool) drops you into vi, survival skills turn a scary blank screen into a non-event. That's the whole point of this module."
+  }
+];
+
+const quiz = document.getElementById('quiz');
+const answeredEl = document.getElementById('answered');
+const correctEl = document.getElementById('correct');
+const barfill = document.getElementById('barfill');
+const doneEl = document.getElementById('done');
+let answered = 0, correct = 0;
+
+function build() {
+  quiz.innerHTML = ''; answered = 0; correct = 0; updateScore();
+  doneEl.className = 'done'; doneEl.textContent = '';
+  questions.forEach((item, qi) => {
+    const card = document.createElement('section'); card.className = 'card';
+    const num = document.createElement('div'); num.className = 'qnum';
+    num.textContent = 'Question ' + (qi + 1) + ' of ' + questions.length; card.appendChild(num);
+    const qt = document.createElement('p'); qt.className = 'qtext'; qt.textContent = item.q; card.appendChild(qt);
+    const opts = document.createElement('div'); opts.className = 'opts';
+    const buttons = [];
+    item.options.forEach((text, oi) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.textContent = text;
+      b.addEventListener('click', () => choose(qi, oi, buttons, expl));
+      opts.appendChild(b); buttons.push(b);
+    });
+    card.appendChild(opts);
+    const expl = document.createElement('div'); expl.className = 'explain'; expl.textContent = item.explain;
+    card.appendChild(expl);
+    quiz.appendChild(card);
+  });
+}
+
+function choose(qi, oi, buttons, expl) {
+  if (buttons[0].disabled) return;
+  const right = questions[qi].answer;
+  buttons.forEach((b, i) => {
+    b.disabled = true;
+    if (i === right) { b.classList.add('correct'); b.appendChild(mark('✓')); }
+    if (i === oi && oi !== right) { b.classList.add('wrong'); b.appendChild(mark('✗')); }
+  });
+  expl.classList.add('show');
+  answered++; if (oi === right) correct++;
+  updateScore();
+}
+
+function mark(sym) { const s = document.createElement('span'); s.className = 'mark'; s.textContent = sym; return s; }
+
+function updateScore() {
+  answeredEl.textContent = answered; correctEl.textContent = correct;
+  barfill.style.width = (answered / questions.length * 100) + '%';
+  if (answered === questions.length) {
+    const pct = Math.round(correct / questions.length * 100);
+    let note = pct === 100 ? "Perfect — vi holds no fear for you now." :
+               pct >= 70 ? "Solid. Re-read the ones you missed." :
+               "Worth another pass — then go drill it in the sandbox.";
+    doneEl.innerHTML = '';
+    const strong = document.createElement('strong');
+    strong.textContent = 'Score: ' + correct + ' / ' + questions.length + ' (' + pct + '%)';
+    doneEl.appendChild(strong); doneEl.appendChild(document.createElement('br'));
+    doneEl.appendChild(document.createTextNode(note));
+    doneEl.classList.add('show');
+  }
+}
+
+document.getElementById('reset').addEventListener('click', build);
+build();
+</script>
+</body>
+</html>

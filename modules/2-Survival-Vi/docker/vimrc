@@ -1,0 +1,11 @@
+" A gentle, predictable vim for learning survival skills.
+set nocompatible
+syntax on
+set backspace=indent,eol,start   " let backspace work normally in insert mode
+set number                       " show line numbers (handy for :N and G)
+set ruler                        " show cursor line/column
+set laststatus=2                 " always show a status line
+set showmode                     " show -- INSERT --, -- VISUAL -- etc.
+set showcmd                      " show partial commands (e.g. the 3 in 3dd)
+set noswapfile                   " no .swp clutter in a throwaway sandbox
+set nowrap
