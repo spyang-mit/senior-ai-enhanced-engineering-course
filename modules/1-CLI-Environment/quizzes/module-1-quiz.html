@@ -128,24 +128,24 @@ const questions = [
     q: "Reading this line, who can EXECUTE the file?",
     code: "-rwxr-x---  1  dev  staff  2048  Jul 13 09:03  deploy.sh",
     options: [
-      "Only the owner, dev",
-      "The owner dev, and members of the group staff",
-      "Everyone on the system",
-      "Nobody — execute is off"
+      "Only the owner (dev) — nobody else at all",
+      "Everyone on the whole system can run it",
+      "The owner, and the staff group",
+      "No one — the execute bit is switched off"
     ],
-    answer: 1,
+    answer: 2,
     explain: "The owner bits are rwx and the group bits are r-x, so dev and anyone in group staff can execute it. Others are ---, so no one else can even read it."
   },
   {
     q: "What is the mode -rwxr-x--- written in octal?",
-    options: ["740", "750", "755", "770"],
-    answer: 1,
+    options: ["750", "740", "755", "770"],
+    answer: 0,
     explain: "r=4, w=2, x=1. rwx = 7, r-x = 5, --- = 0 → 750."
   },
   {
     q: "Which symbolic form equals octal 640?",
-    options: ["rw-r--r--", "rw-r-----", "rw-------", "rwxr-----"],
-    answer: 1,
+    options: ["rw-r--r--", "rw-------", "rwxr-----", "rw-r-----"],
+    answer: 3,
     explain: "6 = rw-, 4 = r--, 0 = --- → rw-r----- (owner read/write, group read, others nothing)."
   },
   {
@@ -156,74 +156,74 @@ const questions = [
   },
   {
     q: "ssh refuses your private key because it is 'too open.' Which command fixes it?",
-    options: ["chmod 644 id_ed25519", "chmod 600 id_ed25519", "chmod 777 id_ed25519", "chmod +x id_ed25519"],
-    answer: 1,
+    options: ["chmod 644 id_ed25519", "chmod 777 id_ed25519", "chmod +x id_ed25519", "chmod 600 id_ed25519"],
+    answer: 3,
     explain: "A private key must be readable and writable only by its owner — chmod 600 (rw-------)."
   },
   {
     q: "How do  echo hi > f  and  echo hi >> f  differ?",
     options: [
-      "No difference",
-      "> appends to the end; >> overwrites",
-      "> overwrites (replaces the whole file); >> appends to the end",
-      "Both delete f"
+      "> replaces the file's contents; >> appends to the end",
+      "They do the same thing; the second > is just decorative",
+      "> adds to the end of the file, while >> replaces it entirely",
+      "Both of them delete the file f before writing"
     ],
-    answer: 2,
+    answer: 0,
     explain: "> truncates and replaces the file's contents; >> appends. > is the destructive one — aim it at the wrong file and the old contents are gone."
   },
   {
     q: "What does  grep ERROR server.log | wc -l  do?",
     options: [
-      "Counts the lines in server.log that contain ERROR",
-      "Prints every ERROR line to the screen",
-      "Counts all lines in server.log",
-      "Deletes the ERROR lines"
+      "Prints every line that contains ERROR to the screen",
+      "Counts every line in server.log, ERROR or not",
+      "Finds the ERROR lines and deletes them from the file",
+      "Counts how many lines contain ERROR"
     ],
-    answer: 0,
+    answer: 3,
     explain: "grep selects the matching lines; the pipe feeds them to wc -l, which counts lines. Net result: how many error lines there are."
   },
   {
     q: "A tool is installed and executable, but typing its name gives 'command not found.' Most likely cause?",
     options: [
-      "The file is corrupt",
+      "The file is corrupted and needs reinstalling",
+      "You have to run it with sudo to find it",
       "Its directory isn't on your PATH",
-      "You need to run it with sudo",
-      "You're in the wrong shell"
+      "You're using the wrong shell for that tool"
     ],
-    answer: 1,
+    answer: 2,
     explain: "The shell only finds commands in the directories listed on $PATH. Inspect it with  echo $PATH  and add the tool's directory if it's missing."
   },
   {
     q: "What's the difference between  NAME=value  and  export NAME=value ?",
     options: [
-      "Nothing — they're identical",
-      "Only the exported one is visible to programs and scripts the shell launches",
-      "export makes the variable read-only",
-      "export deletes the variable"
+      "Only exported vars are visible to programs you run",
+      "Nothing at all — the two forms are completely identical",
+      "export locks the variable so it can't be changed later",
+      "export removes the variable from the environment"
     ],
-    answer: 1,
+    answer: 0,
     explain: "A plain assignment lives only in the current shell. export marks it for the environment, so child processes (your scripts and programs) inherit it."
   },
   {
     q: "In  tar czf a.tar.gz dir  and  tar xzf a.tar.gz , what do c, x, and z mean?",
     options: [
-      "c = create, x = extract, z = gzip (de)compress",
-      "c = copy, x = delete, z = zip",
-      "Both extract; z means verbose",
-      "x = create, c = check"
+      "copy, delete, and zip (only when creating)",
+      "both of them mean extract; z just means verbose output",
+      "c checks the archive while x and z create it",
+      "create, extract, and gzip, respectively"
     ],
-    answer: 0,
+    answer: 3,
     explain: "c create, x extract, t list; z adds gzip (de)compression. f means 'the archive filename comes next.'"
   },
   {
     q: "You run  alias ll='ls -al'  but it's gone in a new terminal. Why, and how do you keep it?",
     options: [
-      "Aliases are permanent by default; you hit a bug",
-      "It only lives in that shell session — add the line to ~/.bashrc",
-      "You must chmod the alias to make it stick",
-      "Aliases require sudo"
+      "Aliases are supposed to be permanent, so you hit a bug",
+      "You must chmod the alias for it to take effect",
+      "It's session-only; put it in ~/.bashrc to persist",
+      "Aliases only work when you run them with sudo"
     ],
-    answer: 1,
+    answer: 2,
     explain: "An alias set at the prompt is session-only. Put  alias ll='ls -al'  in ~/.bashrc so every new shell loads it (run  source ~/.bashrc  to apply it now)."
   },
   {
@@ -240,10 +240,10 @@ const questions = [
   {
     q: "An agent generated this cleanup line:  rm -rf $BUILD_DIR/  — why is it dangerous?",
     options: [
-      "It isn't; it's perfectly safe",
-      "If $BUILD_DIR is empty or unset it can become  rm -rf /  , and unquoted it splits on spaces — quote it and guard the variable",
-      "rm can never be dangerous",
-      "It just needs sudo to work"
+      "It isn't dangerous at all — this is the normal way to clean up",
+      "An empty or unquoted $BUILD_DIR can turn it into rm -rf /",
+      "rm simply can't do real damage, so there's nothing to worry about",
+      "It only needs sudo added in front to run correctly and safely"
     ],
     answer: 1,
     explain: "Guard and quote it:  : \"${BUILD_DIR:?set me}\"  then  rm -rf -- \"$BUILD_DIR\" . An empty or unquoted variable in  rm -rf  has wiped real systems."

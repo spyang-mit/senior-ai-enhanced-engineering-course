@@ -117,6 +117,14 @@ open quizzes/module-2-quiz.html
 
 (On Linux: `xdg-open quizzes/module-2-quiz.html`; or just double-click it.)
 
+Once that feels easy, try the **advanced quiz** — harder, and it reaches past survival vi into
+power moves (text objects, registers, macros, marks, substitution, visual-block). Anything you
+miss is a keystroke-saver worth learning:
+
+```
+open quizzes/module-2-quiz-advanced.html
+```
+
 ## What's next
 
 **Module 3 — Git: local version control.** Your first `git commit` there will open vi for the

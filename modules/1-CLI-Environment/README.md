@@ -189,6 +189,14 @@ open quizzes/module-1-quiz.html
 
 (On Linux: `xdg-open quizzes/module-1-quiz.html`; or just double-click the file.)
 
+Once that feels easy, try the **advanced quiz** — harder, and it deliberately reaches past this
+module into shell deep cuts (setuid/sticky bits, redirection order, quoting, globbing). Anything
+you miss is a pointer to something worth learning:
+
+```
+open quizzes/module-1-quiz-advanced.html
+```
+
 ## What's next
 
 Module 2 puts this script under **git and GitHub** and adds the survival **vi** skills you'll

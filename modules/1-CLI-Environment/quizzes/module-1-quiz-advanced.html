@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 1 — Advanced Quiz (the command line, deep cuts)</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --ink: #1c2024; --muted: #5b6570;
+    --border: #dfe3e8; --accent: #7b3fe4; --code-bg: #f0f2f5;
+    --ok-bg: #e7f6ec; --ok-border: #34a853; --ok-ink: #1a6e34;
+    --no-bg: #fdeceb; --no-border: #e0483b; --no-ink: #b02a20;
+    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171a; --card: #1e2226; --ink: #e7ebef; --muted: #9aa4ae;
+      --border: #333a41; --accent: #a884f5; --code-bg: #12151a;
+      --ok-bg: #16281c; --ok-border: #35a558; --ok-ink: #7fd79b;
+      --no-bg: #2a1917; --no-border: #d8564a; --no-ink: #f0a49c;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 18px 80px; }
+  header h1 { font-size: 1.5rem; margin: 0 0 4px; letter-spacing: -.01em; }
+  header .badge { display:inline-block; font-size:.72rem; font-weight:700; text-transform:uppercase;
+    letter-spacing:.06em; color:#fff; background:var(--accent); border-radius:999px; padding:2px 10px; margin-bottom:8px; }
+  header p { color: var(--muted); margin: 0 0 18px; }
+  .score { position: sticky; top: 0; z-index: 5; background: var(--card);
+    border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow);
+    padding: 12px 16px; margin: 0 0 22px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .score .nums { font-weight: 600; }
+  .score .bar { flex: 1 1 140px; height: 8px; background: var(--code-bg); border-radius: 999px; overflow: hidden; min-width: 120px; }
+  .score .bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s ease; }
+  .score button { font: inherit; font-size: .85rem; cursor: pointer; background: transparent;
+    color: var(--accent); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; }
+  .score button:hover { border-color: var(--accent); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    box-shadow: var(--shadow); padding: 18px 18px 6px; margin: 0 0 18px; }
+  .qnum { color: var(--muted); font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .qtext { margin: 4px 0 12px; font-weight: 500; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; margin: 0 0 14px; overflow-x: auto;
+    font: .86rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .opts { display: grid; gap: 8px; }
+  .opt { display: block; width: 100%; text-align: left; cursor: pointer; font: inherit; color: var(--ink);
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px;
+    transition: border-color .12s, background .12s; }
+  .opt:hover:not(:disabled) { border-color: var(--accent); }
+  .opt:disabled { cursor: default; }
+  .opt.correct { background: var(--ok-bg); border-color: var(--ok-border); color: var(--ok-ink); }
+  .opt.wrong { background: var(--no-bg); border-color: var(--no-border); color: var(--no-ink); }
+  .opt .mark { float: right; font-weight: 700; }
+  .explain { margin: 12px 0 14px; padding: 11px 14px; border-radius: 10px; background: var(--code-bg);
+    border: 1px solid var(--border); color: var(--muted); font-size: .92rem; display: none; }
+  .explain.show { display: block; }
+  .explain code { color: var(--ink); }
+  .done { text-align: center; padding: 22px; border-radius: 14px; border: 1px dashed var(--border);
+    color: var(--muted); margin-top: 8px; display: none; }
+  .done.show { display: block; }
+  .done strong { color: var(--ink); font-size: 1.15rem; }
+  footer { color: var(--muted); font-size: .85rem; text-align: center; margin-top: 30px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="badge">Advanced</div>
+    <h1>Module 1 — Advanced Quiz</h1>
+    <p>Deep cuts of the shell: special permission bits, redirection order, quoting, globbing, and more. Harder than the first quiz, and some of it goes beyond the module — treat unfamiliar ones as things to go learn.</p>
+  </header>
+
+  <div class="score" role="status" aria-live="polite">
+    <span class="nums"><span id="answered">0</span> answered · <span id="correct">0</span> correct</span>
+    <span class="bar"><i id="barfill"></i></span>
+    <button id="reset" type="button">Reset</button>
+  </div>
+
+  <main id="quiz"></main>
+  <div class="done" id="done"></div>
+  <footer>Didn't know one? That's the point — now you have something to look up.</footer>
+</div>
+
+<script>
+const questions = [
+  {
+    q: "You run  chmod 1777 /tmp . What does the leading 1 turn on?",
+    options: [
+      "The sticky bit: only a file's owner can delete it in that dir",
+      "The setuid bit, so programs there always run as their owner root",
+      "The setgid bit, so newly created files inherit the parent group",
+      "An archive flag telling backup tools to skip the directory entirely"
+    ],
+    answer: 0,
+    explain: "A leading 1 is the sticky bit. On a world-writable dir like /tmp it means users can only delete or rename their OWN files. (2 = setgid, 4 = setuid.)"
+  },
+  {
+    q: "Your umask is 022 and a program asks to create a file with mode 666. What mode does the file actually get?",
+    options: ["600", "644", "664", "755"],
+    answer: 1,
+    explain: "umask clears bits from the requested mode: 666 with 022 masked off = 644 (write removed for group and others)."
+  },
+  {
+    q: "What is a real difference between a hard link and a symbolic link?",
+    options: [
+      "A hard link stores a path; a symlink stores an inode number",
+      "Hard links can span different mounted filesystems; symlinks cannot",
+      "A symlink dangles if its target moves; a hard link keeps the data",
+      "Symlinks take up zero disk space at all, unlike hard links"
+    ],
+    answer: 2,
+    explain: "A symlink holds a path, so it breaks if the target moves or is deleted. A hard link is another name for the same inode — the data lives until every link is gone. (Hard links can't cross filesystems; symlinks can.)"
+  },
+  {
+    q: "Which command sends BOTH stdout and stderr into log.txt?",
+    options: [
+      "cmd 2>&1 > log.txt",
+      "cmd >> 2>&1 log.txt",
+      "cmd > log.txt & 2>1",
+      "cmd > log.txt 2>&1"
+    ],
+    answer: 3,
+    explain: "Redirections apply left to right. '> log.txt 2>&1' points stdout at the file, then points stderr where stdout now goes. Putting 2>&1 first sends stderr to the OLD stdout (the terminal)."
+  },
+  {
+    q: "In a script, how do quoted \"$@\" and \"$*\" differ?",
+    options: [
+      "\"$@\" keeps each argument separate; \"$*\" joins them into one",
+      "Once quoted, the two behave in exactly the same way as each other",
+      "\"$*\" keeps the arguments separate while \"$@\" joins them together",
+      "Both of them collapse every argument into one single combined string"
+    ],
+    answer: 0,
+    explain: "\"$@\" expands to each argument as its own word (what you almost always want); \"$*\" joins them into a single string separated by the first char of IFS."
+  },
+  {
+    q: "What's the most portable, script-safe way to check whether a command exists?",
+    options: ["which mycmd", "command -v mycmd", "locate mycmd", "sudo whereis mycmd"],
+    answer: 1,
+    explain: "'command -v' is a POSIX shell builtin and the recommended check. 'which' is an external program that isn't everywhere and behaves inconsistently across systems."
+  },
+  {
+    q: "Without  set -o pipefail , what is the exit status of  false | true ?",
+    options: [
+      "1, because the false stage failed",
+      "It is always 130 for any pipeline",
+      "0 — the status of the last command, true",
+      "The whole script aborts on the spot immediately"
+    ],
+    answer: 2,
+    explain: "A pipeline's status is its LAST command's by default, so 'false | true' returns 0 and the failure is hidden. 'set -o pipefail' makes the pipeline fail if any stage fails."
+  },
+  {
+    q: "How does  chmod -R a+X dir  differ from  a+x ?",
+    options: [
+      "Nothing — capital X and lowercase x behave identically",
+      "X strips the execute bit off everything instead of adding it",
+      "X also applies the change to hidden dotfiles that plain x skips over",
+      "X adds execute only to directories and already-executable files"
+    ],
+    answer: 3,
+    explain: "Capital X adds execute only to directories and to files that already have some execute bit set — perfect for 'make folders traversable without marking every file executable.'"
+  },
+  {
+    q: "By default in bash, what does  **  match that a single  *  does not?",
+    options: [
+      "Nothing extra, unless you first run 'shopt -s globstar'",
+      "It always matches files recursively through every subdirectory",
+      "It matches only the hidden dotfiles that a single * skips over",
+      "It escapes the next character so it is treated as a literal"
+    ],
+    answer: 0,
+    explain: "Recursive ** only works after 'shopt -s globstar'; otherwise bash treats ** like *. (And * never matches leading dots unless 'shopt -s dotglob'.)"
+  },
+  {
+    q: "After  grep foo file | sort , how do you read grep's exit code specifically?",
+    options: ["echo $?", "echo ${PIPESTATUS[0]}", "echo $!", "echo ${pipe_status[grep]}"],
+    answer: 1,
+    explain: "$? gives only the last command's status (sort). bash's PIPESTATUS array holds every stage's status; index 0 is grep's."
+  },
+  {
+    q: "Why can  rm -rf $dir/*  be dangerous even when $dir looks fine?",
+    options: [
+      "rm quietly ignores the -r flag when the path is a variable",
+      "The -f flag silently rewrites the whole command into a harmless no-op",
+      "If $dir is empty or unset it becomes rm -rf /*, and spaces split it",
+      "The shell hands the raw * to rm, which then expands it unpredictably"
+    ],
+    answer: 2,
+    explain: "An unset/empty variable turns it into rm -rf /*, and an unquoted value word-splits on spaces. Quote it and guard: rm -rf -- \"${dir:?}\"/*"
+  },
+  {
+    q: "An archive's files all sit under a top 'project/' folder. Which extracts them WITHOUT that leading folder?",
+    options: [
+      "tar xzf a.tgz --strip-prefix=project/",
+      "tar xzf a.tgz -C /",
+      "tar xzf a.tgz --flatten",
+      "tar xzf a.tgz --strip-components=1"
+    ],
+    answer: 3,
+    explain: "--strip-components=1 drops the first path element as it extracts. -C changes the destination directory but keeps the archive's internal structure."
+  },
+  {
+    q: "What does  cat <<< \"$var\"  do?",
+    options: [
+      "Feeds the value of $var to cat's stdin (a here-string)",
+      "Appends $var to a file whose name is literally 'cat'",
+      "Begins a multi-line here-document that runs until the next <<<",
+      "Invokes cat three separate times, once for each <"
+    ],
+    answer: 0,
+    explain: "<<< is a here-string: it sends a single string on stdin. << starts a multi-line here-document that ends at a delimiter word."
+  },
+  {
+    q: "You start  ./run.sh &  then close your SSH session. What likely happens, and how do you prevent it?",
+    options: [
+      "It keeps running regardless — there is nothing you need to do",
+      "It may receive SIGHUP and die — use nohup, or disown it",
+      "The & already fully detaches it from the controlling terminal",
+      "It survives logout only if you originally started it as the root user"
+    ],
+    answer: 1,
+    explain: "Closing the terminal can send SIGHUP to background jobs. Use 'nohup ./run.sh &', 'disown', or run it inside tmux/screen (or a systemd unit) to keep it alive."
+  }
+];
+
+const quiz = document.getElementById('quiz');
+const answeredEl = document.getElementById('answered');
+const correctEl = document.getElementById('correct');
+const barfill = document.getElementById('barfill');
+const doneEl = document.getElementById('done');
+let answered = 0, correct = 0;
+
+function build() {
+  quiz.innerHTML = ''; answered = 0; correct = 0; updateScore();
+  doneEl.className = 'done'; doneEl.textContent = '';
+  questions.forEach((item, qi) => {
+    const card = document.createElement('section'); card.className = 'card';
+    const num = document.createElement('div'); num.className = 'qnum';
+    num.textContent = 'Question ' + (qi + 1) + ' of ' + questions.length; card.appendChild(num);
+    const qt = document.createElement('p'); qt.className = 'qtext'; qt.textContent = item.q; card.appendChild(qt);
+    if (item.code) { const pre = document.createElement('pre'); pre.textContent = item.code; card.appendChild(pre); }
+    const opts = document.createElement('div'); opts.className = 'opts';
+    const buttons = [];
+    item.options.forEach((text, oi) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.textContent = text;
+      b.addEventListener('click', () => choose(qi, oi, buttons, expl));
+      opts.appendChild(b); buttons.push(b);
+    });
+    card.appendChild(opts);
+    const expl = document.createElement('div'); expl.className = 'explain'; expl.textContent = item.explain;
+    card.appendChild(expl);
+    quiz.appendChild(card);
+  });
+}
+
+function choose(qi, oi, buttons, expl) {
+  if (buttons[0].disabled) return;
+  const right = questions[qi].answer;
+  buttons.forEach((b, i) => {
+    b.disabled = true;
+    if (i === right) { b.classList.add('correct'); b.appendChild(mark('✓')); }
+    if (i === oi && oi !== right) { b.classList.add('wrong'); b.appendChild(mark('✗')); }
+  });
+  expl.classList.add('show');
+  answered++; if (oi === right) correct++;
+  updateScore();
+}
+
+function mark(sym) { const s = document.createElement('span'); s.className = 'mark'; s.textContent = sym; return s; }
+
+function updateScore() {
+  answeredEl.textContent = answered; correctEl.textContent = correct;
+  barfill.style.width = (answered / questions.length * 100) + '%';
+  if (answered === questions.length) {
+    const pct = Math.round(correct / questions.length * 100);
+    let note = pct === 100 ? "Genuinely impressive — you know the deep cuts." :
+               pct >= 60 ? "Strong. Look up the ones you missed; they pay off." :
+               "This one's meant to stretch you — mine the explanations and retry.";
+    doneEl.innerHTML = '';
+    const strong = document.createElement('strong');
+    strong.textContent = 'Score: ' + correct + ' / ' + questions.length + ' (' + pct + '%)';
+    doneEl.appendChild(strong); doneEl.appendChild(document.createElement('br'));
+    doneEl.appendChild(document.createTextNode(note));
+    doneEl.classList.add('show');
+  }
+}
+
+document.getElementById('reset').addEventListener('click', build);
+build();
+</script>
+</body>
+</html>

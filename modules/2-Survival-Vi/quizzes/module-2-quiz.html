@@ -86,20 +86,20 @@
 const questions = [
   {
     q: "vi has you trapped. You've made changes you do NOT want to keep, and you just want out. What do you do?",
-    options: ["Press Ctrl-C a bunch of times", "Type :w then :q", "Press Esc, then type :q! and press Enter", "Close the terminal window"],
+    options: ["Mash Ctrl-C until something happens", "Save first with :w, then quit with :q", "Press Esc, then type :q!", "Just close the whole terminal window"],
     answer: 2,
     explain: "Esc gets you to normal mode; :q! quits and discards your changes. This is THE survival command — you're never stuck."
   },
   {
     q: "You open a file, start typing, and the letters trigger strange jumps and deletions instead of appearing. Why?",
-    options: ["The file is read-only", "You're in normal mode, where letters are commands — press i to start typing text", "vi is broken", "You need to run it with sudo"],
-    answer: 1,
+    options: ["The file is read-only, so vi ignores your keystrokes", "vi is broken and needs to be reinstalled", "You must run vi with sudo to type in it", "You're in normal mode — press i to start typing"],
+    answer: 3,
     explain: "vi starts in normal mode, where keys are commands (dd, x, …). Press i (or a) to enter insert mode; you'll see -- INSERT -- at the bottom."
   },
   {
     q: "What does pressing i do?",
-    options: ["Saves the file", "Enters insert mode, typing text before the cursor", "Deletes the current line", "Quits vi"],
-    answer: 1,
+    options: ["Switches to insert mode so you can type", "Saves the file to disk right away, with no prompt", "Deletes the line the cursor is on", "Quits vi without saving anything"],
+    answer: 0,
     explain: "i = insert before the cursor. a inserts after it; A inserts at the end of the line. Esc returns to normal mode."
   },
   {
@@ -116,20 +116,20 @@ const questions = [
   },
   {
     q: "How do you delete just the single character under the cursor?",
-    options: ["dd", "x", "dw", "cc"],
-    answer: 1,
+    options: ["dd", "dw", "cc", "x"],
+    answer: 3,
     explain: "x deletes the character under the cursor. dw deletes to the end of the word; dd deletes the whole line."
   },
   {
     q: "You just made a change you regret (still in vi, not saved yet). How do you undo it?",
-    options: ["Ctrl-Z", "u", "Esc twice", ":undo-please"],
-    answer: 1,
+    options: ["u", "Ctrl-Z", "Esc twice", ":undo-please"],
+    answer: 0,
     explain: "u undoes the last change — press it repeatedly to go further back. Ctrl-R redoes. (Ctrl-Z would suspend the whole program, not undo an edit.)"
   },
   {
     q: "Copy the current line and paste a copy just below it. Which keys?",
-    options: ["dd then p", "yy then p", "cc then p", "Ctrl-C then Ctrl-V"],
-    answer: 1,
+    options: ["dd then p", "cc then p", "Ctrl-C then Ctrl-V", "yy then p"],
+    answer: 3,
     explain: "yy yanks (copies) the line; p pastes it below. Note: dd then p would MOVE the line (dd cuts), not copy it."
   },
   {
@@ -140,25 +140,25 @@ const questions = [
   },
   {
     q: "Search forward for the word 'banana':",
-    options: ["find banana", "/banana then Enter", ":search banana", "grep banana"],
-    answer: 1,
+    options: ["Type: find banana", "Run :search banana from normal mode", "/banana then Enter", "Use grep banana inside vi"],
+    answer: 2,
     explain: "/banana then Enter jumps to the next match. Press n for the next match, N for the previous one."
   },
   {
     q: "You want to replace a whole word — delete it and immediately start typing the new one. Best single command?",
-    options: ["dw", "x then i", "cw", "rw"],
-    answer: 2,
+    options: ["dw", "cw", "x then i", "rw"],
+    answer: 1,
     explain: "cw ('change word') deletes to the end of the word and drops you into insert mode so you can type the replacement, then Esc. C does the same to the end of the line."
   },
   {
     q: "How do a and i differ?",
-    options: ["No difference", "a inserts AFTER the cursor; i inserts BEFORE it", "a appends to the file; i inserts a file", "a is for admins only"],
-    answer: 1,
+    options: ["The two behave exactly the same in every situation", "a appends to the whole file while i inserts a file", "a is reserved for administrators only", "a inserts after the cursor; i before it"],
+    answer: 3,
     explain: "Both enter insert mode; a starts one character to the right of the cursor, i starts right at it. A jumps to the end of the line first."
   },
   {
     q: "Why bother learning survival vi at all?",
-    options: ["It's required by law", "git opens vi by default to write commit messages — and vi is on every Unix server you'll ssh into", "vi is the only text editor that exists", "To look impressive"],
+    options: ["vi is literally required by law in some workplaces", "git drops you into vi for commit messages", "vi is the only text editor that exists anywhere", "People will be very impressed that you know it"],
     answer: 1,
     explain: "The moment git (or crontab, or a server config tool) drops you into vi, survival skills turn a scary blank screen into a non-event. That's the whole point of this module."
   }
