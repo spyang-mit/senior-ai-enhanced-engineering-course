@@ -1,0 +1,14 @@
+[user]
+	name = Dev Learner
+	email = dev@sandbox.local
+[init]
+	defaultBranch = main
+[core]
+	editor = vim
+	pager = cat
+[advice]
+	detachedHead = false
+[merge]
+	conflictStyle = merge
+[pull]
+	rebase = false

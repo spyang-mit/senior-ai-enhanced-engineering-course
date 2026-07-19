@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 3 — Advanced Quiz (git, deep cuts)</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --ink: #1c2024; --muted: #5b6570;
+    --border: #dfe3e8; --accent: #7b3fe4; --code-bg: #f0f2f5;
+    --ok-bg: #e7f6ec; --ok-border: #34a853; --ok-ink: #1a6e34;
+    --no-bg: #fdeceb; --no-border: #e0483b; --no-ink: #b02a20;
+    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171a; --card: #1e2226; --ink: #e7ebef; --muted: #9aa4ae;
+      --border: #333a41; --accent: #a884f5; --code-bg: #12151a;
+      --ok-bg: #16281c; --ok-border: #35a558; --ok-ink: #7fd79b;
+      --no-bg: #2a1917; --no-border: #d8564a; --no-ink: #f0a49c;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 18px 80px; }
+  header h1 { font-size: 1.5rem; margin: 0 0 4px; letter-spacing: -.01em; }
+  header .badge { display:inline-block; font-size:.72rem; font-weight:700; text-transform:uppercase;
+    letter-spacing:.06em; color:#fff; background:var(--accent); border-radius:999px; padding:2px 10px; margin-bottom:8px; }
+  header p { color: var(--muted); margin: 0 0 18px; }
+  .score { position: sticky; top: 0; z-index: 5; background: var(--card);
+    border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow);
+    padding: 12px 16px; margin: 0 0 22px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .score .nums { font-weight: 600; }
+  .score .bar { flex: 1 1 140px; height: 8px; background: var(--code-bg); border-radius: 999px; overflow: hidden; min-width: 120px; }
+  .score .bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s ease; }
+  .score button { font: inherit; font-size: .85rem; cursor: pointer; background: transparent;
+    color: var(--accent); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; }
+  .score button:hover { border-color: var(--accent); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    box-shadow: var(--shadow); padding: 18px 18px 6px; margin: 0 0 18px; }
+  .qnum { color: var(--muted); font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .qtext { margin: 4px 0 12px; font-weight: 500; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; margin: 0 0 14px; overflow-x: auto;
+    font: .86rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .opts { display: grid; gap: 8px; }
+  .opt { display: block; width: 100%; text-align: left; cursor: pointer; font: inherit; color: var(--ink);
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px;
+    transition: border-color .12s, background .12s; }
+  .opt:hover:not(:disabled) { border-color: var(--accent); }
+  .opt:disabled { cursor: default; }
+  .opt.correct { background: var(--ok-bg); border-color: var(--ok-border); color: var(--ok-ink); }
+  .opt.wrong { background: var(--no-bg); border-color: var(--no-border); color: var(--no-ink); }
+  .opt .mark { float: right; font-weight: 700; }
+  .explain { margin: 12px 0 14px; padding: 11px 14px; border-radius: 10px; background: var(--code-bg);
+    border: 1px solid var(--border); color: var(--muted); font-size: .92rem; display: none; }
+  .explain.show { display: block; }
+  .explain code { color: var(--ink); }
+  .done { text-align: center; padding: 22px; border-radius: 14px; border: 1px dashed var(--border);
+    color: var(--muted); margin-top: 8px; display: none; }
+  .done.show { display: block; }
+  .done strong { color: var(--ink); font-size: 1.15rem; }
+  footer { color: var(--muted); font-size: .85rem; text-align: center; margin-top: 30px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="badge">Advanced</div>
+    <h1>Module 3 — Advanced Quiz</h1>
+    <p>Past the basics: reflog, reset modes, revert, stash, bisect, tags, detached HEAD, and safer force-pushing. Some of this is beyond the module on purpose — anything you miss is a real-world tool worth adding.</p>
+  </header>
+
+  <div class="score" role="status" aria-live="polite">
+    <span class="nums"><span id="answered">0</span> answered · <span id="correct">0</span> correct</span>
+    <span class="bar"><i id="barfill"></i></span>
+    <button id="reset" type="button">Reset</button>
+  </div>
+
+  <main id="quiz"></main>
+  <div class="done" id="done"></div>
+  <footer>git almost never truly loses work — knowing these is how you get it back.</footer>
+</div>
+
+<script>
+const questions = [
+  {
+    q: "You ran 'git reset --hard' and lost commits you had never pushed. Best way to get them back?",
+    options: [
+      "git reflog to find the lost commit, then reset or checkout to it",
+      "They're gone permanently; there's nothing to recover",
+      "git pull to restore the commits from the origin remote",
+      "Reinstall git entirely, which rebuilds the working history for you"
+    ],
+    answer: 0,
+    explain: "git reflog is a local log of everywhere HEAD has been. The 'lost' commit is still there for a while — find its hash in the reflog and reset/checkout to it."
+  },
+  {
+    q: "How does  git reset --soft HEAD~1  differ from  git reset --hard HEAD~1 ?",
+    options: [
+      "There's no real difference; both simply move HEAD back by exactly one",
+      "--soft keeps your changes staged; --hard throws them away entirely",
+      "--hard keeps the changes staged while --soft deletes them",
+      "--soft also rewrites the matching history up on the remote"
+    ],
+    answer: 1,
+    explain: "Both move HEAD back one commit. --soft leaves that commit's changes staged (ready to recommit); --mixed leaves them unstaged; --hard discards them from the working tree."
+  },
+  {
+    q: "A bad commit is already pushed and teammates have pulled it. Safest way to undo its effect?",
+    options: [
+      "git reset --hard to before it, then force-push over everyone",
+      "Delete the whole repository and have everyone re-clone it",
+      "git revert <commit> — it makes a NEW commit that undoes it",
+      "git rebase -i to drop the commit, then force-push the branch"
+    ],
+    answer: 2,
+    explain: "git revert adds a new commit that reverses the changes, so shared history stays intact — no force-push, no broken clones for teammates. reset/rebase rewrite history and are unsafe on shared branches."
+  },
+  {
+    q: "For a MERGE commit, what does  HEAD^2  refer to?",
+    options: [
+      "The commit exactly two steps before HEAD in the history",
+      "Exactly the same commit as HEAD~2 always resolves to",
+      "HEAD's grandparent, exactly two generations up the first-parent line",
+      "HEAD's SECOND parent — the tip of the branch that was merged in"
+    ],
+    answer: 3,
+    explain: "^n selects the nth PARENT of a commit (only meaningful for merges, which have 2+). ~n walks n commits up the first-parent line. So HEAD^2 is the merged-in branch's tip."
+  },
+  {
+    q: "You have uncommitted work but must switch branches right now. Cleanest move?",
+    options: [
+      "git stash, switch branches, then git stash pop",
+      "Commit everything under a throwaway 'wip' message",
+      "Copy the changed files somewhere else by hand first",
+      "You simply can't switch while the tree is dirty"
+    ],
+    answer: 0,
+    explain: "git stash tucks your uncommitted changes away and cleans the tree; switch, do what you need, then git stash pop to bring them back. No junk commit required."
+  },
+  {
+    q: "How does  git fetch  differ from  git pull ?",
+    options: [
+      "They do exactly the same thing under the hood, just aliases",
+      "fetch downloads new commits only; pull fetches and then merges",
+      "pull only downloads commits, while it's fetch that also merges them in",
+      "fetch works offline, whereas pull always requires a network"
+    ],
+    answer: 1,
+    explain: "fetch updates your remote-tracking branches (origin/main) without touching your working branch. pull = fetch + merge (or + rebase), integrating the new commits into your branch."
+  },
+  {
+    q: "Why prefer  git push --force-with-lease  over  git push --force ?",
+    options: [
+      "It transfers objects noticeably faster over the network",
+      "It also pushes all of your local tags along automatically",
+      "It refuses the push if the branch moved since your last fetch",
+      "It force-pushes without ever prompting you for credentials again"
+    ],
+    answer: 2,
+    explain: "--force-with-lease only overwrites the remote branch if it's still where you last saw it — so you won't silently clobber a commit a teammate pushed in the meantime. Plain --force clobbers unconditionally."
+  },
+  {
+    q: "In  git rebase -i , which action keeps a commit's CHANGES but discards its message, folding it into the commit above?",
+    options: ["squash", "reword", "edit", "fixup"],
+    answer: 3,
+    explain: "fixup melds the commit into the previous one and throws away its message. squash also melds but lets you combine the messages; reword edits only the message; edit pauses so you can amend."
+  },
+  {
+    q: "You added a file to .gitignore, but git keeps tracking it. Why, and what's the fix?",
+    options: [
+      ".gitignore only ignores UNtracked files — run git rm --cached on it",
+      ".gitignore is fully case-sensitive, so you just need to rename the file",
+      "You have to commit the .gitignore file before it takes any effect",
+      "You must restart the git daemon so it reloads the ignore rules"
+    ],
+    answer: 0,
+    explain: "Ignore rules apply only to files git isn't already tracking. Stop tracking it (keeping it on disk) with 'git rm --cached <file>', then commit; .gitignore will keep it out from now on."
+  },
+  {
+    q: "You forgot to include a file in your LAST commit, which you haven't pushed. Cleanest fix?",
+    options: [
+      "Make a second commit and title it 'oops, forgot a file'",
+      "git add the file, then git commit --amend",
+      "git revert HEAD, then redo the commit from scratch",
+      "git reset --hard, recreate the changes, and commit again"
+    ],
+    answer: 1,
+    explain: "Stage the missing file and run git commit --amend to fold it into the previous commit (you can keep or edit the message). Only amend commits you haven't pushed."
+  },
+  {
+    q: "'git checkout <hash>' warns you about a 'detached HEAD'. What does that actually mean?",
+    options: [
+      "The repository has somehow become corrupted and unusable",
+      "You must re-clone the entire repository from scratch to recover safely",
+      "You're not on a branch; new commits won't stick unless you make one",
+      "HEAD has lost its network connection to the remote server"
+    ],
+    answer: 2,
+    explain: "HEAD points straight at a commit instead of a branch. You can look around and even commit, but those commits belong to no branch — create one (git switch -c) before moving away, or they become unreachable."
+  },
+  {
+    q: "What's the difference between a lightweight and an annotated git tag?",
+    options: [
+      "Lightweight tags cannot be pushed to a remote or shared at all",
+      "Annotated tags may only ever be placed onto merge commits",
+      "They behave identically apart from the colour they appear in within the log",
+      "Annotated tags carry a message, tagger, and date; lightweight don't"
+    ],
+    answer: 3,
+    explain: "An annotated tag (git tag -a) is a full object with a message, author, and date — use it for releases. A lightweight tag is just a name pointing at a commit, like a branch that doesn't move."
+  },
+  {
+    q: "A bug appeared somewhere in the last 200 commits. Which tool pinpoints the culprit fastest?",
+    options: [
+      "git bisect — it binary-searches history for the first bad commit",
+      "git blame run across every file, examined one by one",
+      "git log, reading through all two hundred commit messages",
+      "Revert commits one at a time, testing, until the bug finally disappears"
+    ],
+    answer: 0,
+    explain: "git bisect does a binary search: you mark a known-good and known-bad commit, and it checks out the midpoint for you to test, narrowing ~200 commits to about 8 steps."
+  },
+  {
+    q: "You've staged some changes. Which command shows exactly what your next commit will include?",
+    options: ["git diff", "git diff --staged", "git status --long", "git show HEAD"],
+    answer: 1,
+    explain: "git diff shows UNstaged changes. git diff --staged (a.k.a. --cached) shows what's staged — precisely what the next commit will record."
+  }
+];
+
+const quiz = document.getElementById('quiz');
+const answeredEl = document.getElementById('answered');
+const correctEl = document.getElementById('correct');
+const barfill = document.getElementById('barfill');
+const doneEl = document.getElementById('done');
+let answered = 0, correct = 0;
+
+function build() {
+  quiz.innerHTML = ''; answered = 0; correct = 0; updateScore();
+  doneEl.className = 'done'; doneEl.textContent = '';
+  questions.forEach((item, qi) => {
+    const card = document.createElement('section'); card.className = 'card';
+    const num = document.createElement('div'); num.className = 'qnum';
+    num.textContent = 'Question ' + (qi + 1) + ' of ' + questions.length; card.appendChild(num);
+    const qt = document.createElement('p'); qt.className = 'qtext'; qt.textContent = item.q; card.appendChild(qt);
+    if (item.code) { const pre = document.createElement('pre'); pre.textContent = item.code; card.appendChild(pre); }
+    const opts = document.createElement('div'); opts.className = 'opts';
+    const buttons = [];
+    item.options.forEach((text, oi) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.textContent = text;
+      b.addEventListener('click', () => choose(qi, oi, buttons, expl));
+      opts.appendChild(b); buttons.push(b);
+    });
+    card.appendChild(opts);
+    const expl = document.createElement('div'); expl.className = 'explain'; expl.textContent = item.explain;
+    card.appendChild(expl);
+    quiz.appendChild(card);
+  });
+}
+
+function choose(qi, oi, buttons, expl) {
+  if (buttons[0].disabled) return;
+  const right = questions[qi].answer;
+  buttons.forEach((b, i) => {
+    b.disabled = true;
+    if (i === right) { b.classList.add('correct'); b.appendChild(mark('✓')); }
+    if (i === oi && oi !== right) { b.classList.add('wrong'); b.appendChild(mark('✗')); }
+  });
+  expl.classList.add('show');
+  answered++; if (oi === right) correct++;
+  updateScore();
+}
+
+function mark(sym) { const s = document.createElement('span'); s.className = 'mark'; s.textContent = sym; return s; }
+
+function updateScore() {
+  answeredEl.textContent = answered; correctEl.textContent = correct;
+  barfill.style.width = (answered / questions.length * 100) + '%';
+  if (answered === questions.length) {
+    const pct = Math.round(correct / questions.length * 100);
+    let note = pct === 100 ? "Genuinely git-fluent — the recovery tools are yours." :
+               pct >= 60 ? "Solid. The ones you missed are worth a quick read." :
+               "Meant to stretch you — the explanations are the lesson; try again.";
+    doneEl.innerHTML = '';
+    const strong = document.createElement('strong');
+    strong.textContent = 'Score: ' + correct + ' / ' + questions.length + ' (' + pct + '%)';
+    doneEl.appendChild(strong); doneEl.appendChild(document.createElement('br'));
+    doneEl.appendChild(document.createTextNode(note));
+    doneEl.classList.add('show');
+  }
+}
+
+document.getElementById('reset').addEventListener('click', build);
+build();
+</script>
+</body>
+</html>

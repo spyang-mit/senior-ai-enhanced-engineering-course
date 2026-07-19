@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 3 Quiz — Git: local version control</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --ink: #1c2024; --muted: #5b6570;
+    --border: #dfe3e8; --accent: #2f6fed; --code-bg: #f0f2f5;
+    --ok-bg: #e7f6ec; --ok-border: #34a853; --ok-ink: #1a6e34;
+    --no-bg: #fdeceb; --no-border: #e0483b; --no-ink: #b02a20;
+    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171a; --card: #1e2226; --ink: #e7ebef; --muted: #9aa4ae;
+      --border: #333a41; --accent: #5b8cff; --code-bg: #12151a;
+      --ok-bg: #16281c; --ok-border: #35a558; --ok-ink: #7fd79b;
+      --no-bg: #2a1917; --no-border: #d8564a; --no-ink: #f0a49c;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 18px 80px; }
+  header h1 { font-size: 1.5rem; margin: 0 0 4px; letter-spacing: -.01em; }
+  header p { color: var(--muted); margin: 0 0 18px; }
+  .score { position: sticky; top: 0; z-index: 5; background: var(--card);
+    border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow);
+    padding: 12px 16px; margin: 0 0 22px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .score .nums { font-weight: 600; }
+  .score .bar { flex: 1 1 140px; height: 8px; background: var(--code-bg); border-radius: 999px; overflow: hidden; min-width: 120px; }
+  .score .bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s ease; }
+  .score button { font: inherit; font-size: .85rem; cursor: pointer; background: transparent;
+    color: var(--accent); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; }
+  .score button:hover { border-color: var(--accent); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    box-shadow: var(--shadow); padding: 18px 18px 6px; margin: 0 0 18px; }
+  .qnum { color: var(--muted); font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .qtext { margin: 4px 0 12px; font-weight: 500; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; margin: 0 0 14px; overflow-x: auto;
+    font: .86rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .opts { display: grid; gap: 8px; }
+  .opt { display: block; width: 100%; text-align: left; cursor: pointer; font: inherit; color: var(--ink);
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px;
+    transition: border-color .12s, background .12s; }
+  .opt:hover:not(:disabled) { border-color: var(--accent); }
+  .opt:disabled { cursor: default; }
+  .opt.correct { background: var(--ok-bg); border-color: var(--ok-border); color: var(--ok-ink); }
+  .opt.wrong { background: var(--no-bg); border-color: var(--no-border); color: var(--no-ink); }
+  .opt .mark { float: right; font-weight: 700; }
+  .explain { margin: 12px 0 14px; padding: 11px 14px; border-radius: 10px; background: var(--code-bg);
+    border: 1px solid var(--border); color: var(--muted); font-size: .92rem; display: none; }
+  .explain.show { display: block; }
+  .explain code { color: var(--ink); }
+  .done { text-align: center; padding: 22px; border-radius: 14px; border: 1px dashed var(--border);
+    color: var(--muted); margin-top: 8px; display: none; }
+  .done.show { display: block; }
+  .done strong { color: var(--ink); font-size: 1.15rem; }
+  footer { color: var(--muted); font-size: .85rem; text-align: center; margin-top: 30px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Module 3 Quiz — Git: local version control</h1>
+    <p>Staging, commits, branches, merge vs. rebase, and conflicts. Pick an answer to see if you're right.</p>
+  </header>
+
+  <div class="score" role="status" aria-live="polite">
+    <span class="nums"><span id="answered">0</span> answered · <span id="correct">0</span> correct</span>
+    <span class="bar"><i id="barfill"></i></span>
+    <button id="reset" type="button">Reset</button>
+  </div>
+
+  <main id="quiz"></main>
+  <div class="done" id="done"></div>
+  <footer>When in doubt, run <code>git status</code> — it always tells you where you stand.</footer>
+</div>
+
+<script>
+const questions = [
+  {
+    q: "Git has three places a change can live: the working tree, the staging area, and the repository. Which command moves a change from the working tree into the staging area?",
+    options: ["git commit", "git add", "git status", "git push"],
+    answer: 1,
+    explain: "git add stages a change — you're marking it to go into your next commit. git commit then snapshots whatever is staged."
+  },
+  {
+    q: "What is a commit?",
+    options: [
+      "A live, always-current mirror of your files kept on a server somewhere",
+      "A snapshot of the staged changes, with a message",
+      "A running log of which teammate last touched each line of code",
+      "Just another word for a branch"
+    ],
+    answer: 1,
+    explain: "A commit is a snapshot of the staging area plus a message, identified by a unique hash. It's a point in history you can always return to."
+  },
+  {
+    q: "You run one command and it prints your current branch, what's changed, and what's staged. Which is it?",
+    options: ["git log", "git diff", "git status", "git show"],
+    answer: 2,
+    explain: "git status is your compass — run it constantly. (git log shows history; git diff shows the actual line changes.)"
+  },
+  {
+    q: "Which command creates a new branch AND switches to it in one step?",
+    options: ["git branch new", "git checkout -b new", "git switch --create-only new", "git merge -b new"],
+    answer: 1,
+    explain: "git checkout -b new creates branch 'new' and moves you onto it. (Plain 'git branch new' creates it but leaves you where you are.)"
+  },
+  {
+    q: "You're on main and want the commits from branch 'feature' brought into main. What do you run?",
+    options: ["git merge feature", "git checkout feature", "git rebase feature onto main", "git cherry-pick feature"],
+    answer: 0,
+    explain: "From the branch you want to update (main), 'git merge feature' brings feature's commits in. You merge INTO the branch you're standing on."
+  },
+  {
+    q: "What's the key difference between merge and rebase?",
+    options: [
+      "Nothing — under the hood they combine branches in exactly the same way",
+      "merge permanently deletes the branch you merged in; rebase leaves it in place",
+      "merge keeps the fork; rebase replays your work on top for a linear history",
+      "rebase needs a network connection, while merge works offline"
+    ],
+    answer: 2,
+    explain: "merge preserves the fork and may add a merge commit; rebase rewrites your branch to sit on top of the target, giving linear history. Rebase local work, not history others already have."
+  },
+  {
+    q: "What does git cherry-pick do?",
+    options: [
+      "Merges a whole branch, letting you skip any commits you dislike",
+      "Permanently removes a chosen commit from the project's history",
+      "Selects a commit at random and reverts it",
+      "Copies one commit (by hash) onto your current branch"
+    ],
+    answer: 3,
+    explain: "cherry-pick replays exactly one commit onto where you are — perfect for grabbing a single fix without merging a whole branch."
+  },
+  {
+    q: "You run a merge and git reports a CONFLICT. What does that mean?",
+    options: [
+      "Something is broken in git and the command has silently failed midway",
+      "Your repository is corrupted and needs to be re-cloned from scratch",
+      "Both sides changed the same lines, so git asks you to decide",
+      "You lack permission and must re-run the whole command with sudo"
+    ],
+    answer: 2,
+    explain: "A conflict is git honestly saying 'two changes disagree; you choose.' It's normal, not an error you did wrong."
+  },
+  {
+    q: "A conflicted file contains these markers. What do you do to resolve it?",
+    code: "<<<<<<< HEAD\nversion = 2.0\n=======\nversion = 3.0\n>>>>>>> green",
+    options: [
+      "Leave the markers alone — git strips them out for you on the next commit",
+      "Delete the whole file so there's no conflict left for git to complain about",
+      "Keep re-running git status until the conflict eventually clears itself",
+      "Edit it to the result you want, then delete the three marker lines"
+    ],
+    answer: 3,
+    explain: "You edit the content to the desired result and remove the <<<<<<< ======= >>>>>>> lines. Then 'git add' the file to mark it resolved."
+  },
+  {
+    q: "You've edited a conflicted file during a REBASE and removed the markers. How do you mark it resolved and finish?",
+    options: [
+      "git add <file>, then git commit (the way you'd finish a merge)",
+      "git add <file>, then git rebase --continue",
+      "git resolve <file>",
+      "git rebase --done"
+    ],
+    answer: 1,
+    explain: "git add marks the file resolved; 'git rebase --continue' finishes the rebase. Do NOT use git commit here — mid-rebase you're on a detached HEAD, so git commit makes a stray commit your branch won't point to and leaves the rebase unfinished. (A MERGE conflict is the opposite: there you finish with git commit.)"
+  },
+  {
+    q: "A merge is going sideways and you want to back out completely, as if you never started it. What do you run?",
+    options: ["git merge --abort", "git reset --hard HEAD~5", "git checkout -f", "Ctrl-C and hope"],
+    answer: 0,
+    explain: "git merge --abort returns the repo to exactly how it was before the merge — nothing lost. (git rebase --abort does the same for a rebase.)"
+  },
+  {
+    q: "What does 'git commit -a' do?",
+    options: [
+      "Commits every file in the repo, including brand-new untracked ones",
+      "Rewrites the previous commit to fold in your latest edits",
+      "Commits your changes and then pushes them to the remote",
+      "Stages and commits your already-tracked changes in one step"
+    ],
+    answer: 3,
+    explain: "-a auto-stages modifications to already-tracked files and commits them in one step. New files git has never seen still need an explicit 'git add'."
+  },
+  {
+    q: "Why does this module stay entirely local (no GitHub, remotes, or pull requests)?",
+    options: [
+      "The parts that matter — branches, history, merging, conflicts — are all local",
+      "A GitHub account costs money that beginners shouldn't have to spend yet",
+      "Local git is a separate program with a completely different set of commands",
+      "Working locally guarantees your source code can never be seen by anyone else, ever"
+    ],
+    answer: 0,
+    explain: "Everything hard and important about git happens on your machine. Nail that first; the online collaboration layer (remotes, PRs, CI) comes later, with deployment."
+  }
+];
+
+const quiz = document.getElementById('quiz');
+const answeredEl = document.getElementById('answered');
+const correctEl = document.getElementById('correct');
+const barfill = document.getElementById('barfill');
+const doneEl = document.getElementById('done');
+let answered = 0, correct = 0;
+
+function build() {
+  quiz.innerHTML = ''; answered = 0; correct = 0; updateScore();
+  doneEl.className = 'done'; doneEl.textContent = '';
+  questions.forEach((item, qi) => {
+    const card = document.createElement('section'); card.className = 'card';
+    const num = document.createElement('div'); num.className = 'qnum';
+    num.textContent = 'Question ' + (qi + 1) + ' of ' + questions.length; card.appendChild(num);
+    const qt = document.createElement('p'); qt.className = 'qtext'; qt.textContent = item.q; card.appendChild(qt);
+    if (item.code) { const pre = document.createElement('pre'); pre.textContent = item.code; card.appendChild(pre); }
+    const opts = document.createElement('div'); opts.className = 'opts';
+    const buttons = [];
+    item.options.forEach((text, oi) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.textContent = text;
+      b.addEventListener('click', () => choose(qi, oi, buttons, expl));
+      opts.appendChild(b); buttons.push(b);
+    });
+    card.appendChild(opts);
+    const expl = document.createElement('div'); expl.className = 'explain'; expl.textContent = item.explain;
+    card.appendChild(expl);
+    quiz.appendChild(card);
+  });
+}
+
+function choose(qi, oi, buttons, expl) {
+  if (buttons[0].disabled) return;
+  const right = questions[qi].answer;
+  buttons.forEach((b, i) => {
+    b.disabled = true;
+    if (i === right) { b.classList.add('correct'); b.appendChild(mark('✓')); }
+    if (i === oi && oi !== right) { b.classList.add('wrong'); b.appendChild(mark('✗')); }
+  });
+  expl.classList.add('show');
+  answered++; if (oi === right) correct++;
+  updateScore();
+}
+
+function mark(sym) { const s = document.createElement('span'); s.className = 'mark'; s.textContent = sym; return s; }
+
+function updateScore() {
+  answeredEl.textContent = answered; correctEl.textContent = correct;
+  barfill.style.width = (answered / questions.length * 100) + '%';
+  if (answered === questions.length) {
+    const pct = Math.round(correct / questions.length * 100);
+    let note = pct === 100 ? "Perfect — you own local git now." :
+               pct >= 70 ? "Solid. Re-read the ones you missed." :
+               "Worth another pass — then drill it in the sandbox.";
+    doneEl.innerHTML = '';
+    const strong = document.createElement('strong');
+    strong.textContent = 'Score: ' + correct + ' / ' + questions.length + ' (' + pct + '%)';
+    doneEl.appendChild(strong); doneEl.appendChild(document.createElement('br'));
+    doneEl.appendChild(document.createTextNode(note));
+    doneEl.classList.add('show');
+  }
+}
+
+document.getElementById('reset').addEventListener('click', build);
+build();
+</script>
+</body>
+</html>
