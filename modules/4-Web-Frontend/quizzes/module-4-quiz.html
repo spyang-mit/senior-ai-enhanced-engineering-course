@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 4 Quiz — The web & frontend: consume & verify</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --ink: #1c2024; --muted: #5b6570;
+    --border: #dfe3e8; --accent: #2f6fed; --code-bg: #f0f2f5;
+    --ok-bg: #e7f6ec; --ok-border: #34a853; --ok-ink: #1a6e34;
+    --no-bg: #fdeceb; --no-border: #e0483b; --no-ink: #b02a20;
+    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171a; --card: #1e2226; --ink: #e7ebef; --muted: #9aa4ae;
+      --border: #333a41; --accent: #5b8cff; --code-bg: #12151a;
+      --ok-bg: #16281c; --ok-border: #35a558; --ok-ink: #7fd79b;
+      --no-bg: #2a1917; --no-border: #d8564a; --no-ink: #f0a49c;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 18px 80px; }
+  header h1 { font-size: 1.5rem; margin: 0 0 4px; letter-spacing: -.01em; }
+  header p { color: var(--muted); margin: 0 0 18px; }
+  .score { position: sticky; top: 0; z-index: 5; background: var(--card);
+    border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow);
+    padding: 12px 16px; margin: 0 0 22px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .score .nums { font-weight: 600; }
+  .score .bar { flex: 1 1 140px; height: 8px; background: var(--code-bg); border-radius: 999px; overflow: hidden; min-width: 120px; }
+  .score .bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s ease; }
+  .score button { font: inherit; font-size: .85rem; cursor: pointer; background: transparent;
+    color: var(--accent); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; }
+  .score button:hover { border-color: var(--accent); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    box-shadow: var(--shadow); padding: 18px 18px 6px; margin: 0 0 18px; }
+  .qnum { color: var(--muted); font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .qtext { margin: 4px 0 12px; font-weight: 500; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; margin: 0 0 14px; overflow-x: auto;
+    font: .86rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .opts { display: grid; gap: 8px; }
+  .opt { display: block; width: 100%; text-align: left; cursor: pointer; font: inherit; color: var(--ink);
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px;
+    transition: border-color .12s, background .12s; }
+  .opt:hover:not(:disabled) { border-color: var(--accent); }
+  .opt:disabled { cursor: default; }
+  .opt.correct { background: var(--ok-bg); border-color: var(--ok-border); color: var(--ok-ink); }
+  .opt.wrong { background: var(--no-bg); border-color: var(--no-border); color: var(--no-ink); }
+  .opt .mark { float: right; font-weight: 700; }
+  .explain { margin: 12px 0 14px; padding: 11px 14px; border-radius: 10px; background: var(--code-bg);
+    border: 1px solid var(--border); color: var(--muted); font-size: .92rem; display: none; }
+  .explain.show { display: block; }
+  .explain code { color: var(--ink); }
+  .done { text-align: center; padding: 22px; border-radius: 14px; border: 1px dashed var(--border);
+    color: var(--muted); margin-top: 8px; display: none; }
+  .done.show { display: block; }
+  .done strong { color: var(--ink); font-size: 1.15rem; }
+  footer { color: var(--muted); font-size: .85rem; text-align: center; margin-top: 30px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Module 4 Quiz — The web &amp; frontend: consume &amp; verify</h1>
+    <p>HTTP requests and responses, methods and status codes, JSON &amp; YAML, auth, and reading a UI. Pick an answer to see if you're right.</p>
+  </header>
+
+  <div class="score" role="status" aria-live="polite">
+    <span class="nums"><span id="answered">0</span> answered · <span id="correct">0</span> correct</span>
+    <span class="bar"><i id="barfill"></i></span>
+    <button id="reset" type="button">Reset</button>
+  </div>
+
+  <main id="quiz"></main>
+  <div class="done" id="done"></div>
+  <footer>When a UI misbehaves, open the Network tab — it shows the real HTTP, not the render.</footer>
+</div>
+
+<script>
+const questions = [
+  {
+    q: "HTTP is the protocol behind the web. What is the basic exchange when curl or a browser fetches a URL?",
+    options: [
+      "The client sends a request; the server sends back a response",
+      "The server keeps streaming data until the client disconnects",
+      "The browser reads the page directly off the server's hard disk",
+      "Two servers negotiate with no client involved at all"
+    ],
+    answer: 0,
+    explain: "HTTP is request/response: a client (a browser, curl, a frontend's fetch) asks, and the server answers. Every task in this module is that one exchange."
+  },
+  {
+    q: "In http://localhost:8080/contacts, what does the ':8080' part refer to?",
+    options: [
+      "The version of HTTP in use",
+      "The port — which program to talk to on the machine",
+      "A password needed to reach the server",
+      "The number of results the server should return"
+    ],
+    answer: 1,
+    explain: "A port picks which listening program gets your request. 'localhost' is this machine; ':8080' is the door the contacts API listens on; '/contacts' is the path (endpoint)."
+  },
+  {
+    q: "The four main HTTP methods map to CRUD. Which one CREATES a new resource?",
+    options: ["GET", "PUT", "POST", "DELETE"],
+    answer: 2,
+    explain: "POST creates. GET reads, PUT updates/replaces, DELETE removes — Create / Read / Update / Delete."
+  },
+  {
+    q: "You ask for a contact that doesn't exist: GET /contacts/999. What status code should come back?",
+    options: ["200 OK", "201 Created", "301 Moved Permanently", "404 Not Found"],
+    answer: 3,
+    explain: "404 Not Found means the resource isn't there. 2xx = success, 3xx = redirect, 4xx = you got it wrong, 5xx = the server broke."
+  },
+  {
+    q: "Every HTTP message has the same shape. What sits between the headers and the body?",
+    options: [
+      "A single blank line — a bare CRLF (\\r\\n\\r\\n)",
+      "A comma between the two sections",
+      "An opening <body> tag, as in HTML",
+      "Nothing; the body starts on the very next byte"
+    ],
+    answer: 0,
+    explain: "Headers end with one empty line (a bare \\r\\n\\r\\n), then the optional body follows. 'curl -i URL | cat -A' shows it: the lone ^M$ line is that gap."
+  },
+  {
+    q: "What is JSON?",
+    options: [
+      "A text format for data — objects, arrays, and simple values",
+      "A styling language for laying out web pages",
+      "A small relational database bundled inside every browser",
+      "Another name for an HTML document"
+    ],
+    answer: 0,
+    explain: "JSON (JavaScript Object Notation) is a lightweight text format: objects { }, arrays [ ], strings, numbers, booleans, null. It's what almost every API sends and receives."
+  },
+  {
+    q: "Which of these is INVALID JSON?",
+    options: [
+      "{\"name\": \"Ada\", \"age\": 36}",
+      "{\"tags\": [\"a\", \"b\", \"c\"]}",
+      "{'name': 'Ada'}",
+      "{\"active\": true, \"note\": null}"
+    ],
+    answer: 2,
+    explain: "JSON requires DOUBLE quotes on keys and strings — single quotes are invalid. (Also forbidden: trailing commas and comments.) 'jq . file' is a quick validity check."
+  },
+  {
+    q: "You want just the lastName field out of a JSON response. Which tool is built for that?",
+    options: ["grep", "cat", "sed", "jq"],
+    answer: 3,
+    explain: "jq parses JSON and selects values: curl .../contacts/3 | jq -r .lastName. grep and sed treat it as plain text and break on nested structure."
+  },
+  {
+    q: "The API lets anyone READ contacts but needs a token (Authorization: Bearer let-me-in) to change them. Which requests need the token?",
+    options: [
+      "Every request, including reads",
+      "Only the writes: POST, PUT, and DELETE",
+      "Only GET requests need it",
+      "None — the token is completely optional everywhere"
+    ],
+    answer: 1,
+    explain: "Reads (GET) are public here; writes (POST/PUT/DELETE) require the bearer token. Without it, a write returns 401 Unauthorized."
+  },
+  {
+    q: "A write request arrives with no valid token. What status does the server return?",
+    options: [
+      "200 — the write succeeded",
+      "400 — the request body was malformed",
+      "403 — you are authenticated but still forbidden",
+      "401 — no valid credentials were provided"
+    ],
+    answer: 3,
+    explain: "401 Unauthorized = 'who are you?' — missing or invalid credentials. (Its cousin 403 Forbidden = 'I know who you are, but you still may not.')"
+  },
+  {
+    q: "You POST a new contact WITH a valid token but forget the required phone field. What comes back?",
+    options: [
+      "400 Bad Request",
+      "401 Unauthorized",
+      "500 Internal Server Error",
+      "201 Created, with phone left empty"
+    ],
+    answer: 0,
+    explain: "400 Bad Request: the token was fine, but the body failed validation. The server refuses to create an incomplete record."
+  },
+  {
+    q: "You open the app: View Source shows an almost-empty HTML shell, but the Elements panel (the DOM) is full of contacts. How did the data get there?",
+    options: [
+      "The server rendered the full HTML and the browser hid the rest",
+      "curl injected the rows as the page loaded",
+      "The browser's JavaScript fetched /contacts and built the DOM",
+      "The contacts were typed directly into the HTML file by hand"
+    ],
+    answer: 2,
+    explain: "Client-side rendering: the server sends a shell, then the browser's JS calls the API and builds the rows. View Source = what the server sent; the DOM = what the client made."
+  },
+  {
+    q: "An AI-built contacts UI looks fine on screen. What's the fastest way to see whether it's actually talking to the API correctly?",
+    options: [
+      "Trust the screenshot — if it renders, it works",
+      "Open DevTools → Network and watch the requests",
+      "Re-read the source line by line until a bug appears",
+      "Delete it and have the AI rebuild the whole thing"
+    ],
+    answer: 1,
+    explain: "The Network tab is ground truth: every request the app made, its method, status, and payload — the same HTTP you can reproduce with curl."
+  },
+  {
+    q: "You've been reading contacts-api.yaml. What can YAML do that plain JSON cannot?",
+    options: [
+      "Store lists and key/value pairs",
+      "Be parsed automatically by any standard program",
+      "Carry # comments and inline documentation",
+      "Represent both numbers and text"
+    ],
+    answer: 2,
+    explain: "YAML is a superset of JSON: everything JSON does, plus comments (# ...) so a spec can document itself. That's why OpenAPI contracts are written in YAML."
+  }
+];
+
+const quiz = document.getElementById('quiz');
+const answeredEl = document.getElementById('answered');
+const correctEl = document.getElementById('correct');
+const barfill = document.getElementById('barfill');
+const doneEl = document.getElementById('done');
+let answered = 0, correct = 0;
+
+function build() {
+  quiz.innerHTML = ''; answered = 0; correct = 0; updateScore();
+  doneEl.className = 'done'; doneEl.textContent = '';
+  questions.forEach((item, qi) => {
+    const card = document.createElement('section'); card.className = 'card';
+    const num = document.createElement('div'); num.className = 'qnum';
+    num.textContent = 'Question ' + (qi + 1) + ' of ' + questions.length; card.appendChild(num);
+    const qt = document.createElement('p'); qt.className = 'qtext'; qt.textContent = item.q; card.appendChild(qt);
+    if (item.code) { const pre = document.createElement('pre'); pre.textContent = item.code; card.appendChild(pre); }
+    const opts = document.createElement('div'); opts.className = 'opts';
+    const buttons = [];
+    item.options.forEach((text, oi) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.textContent = text;
+      b.addEventListener('click', () => choose(qi, oi, buttons, expl));
+      opts.appendChild(b); buttons.push(b);
+    });
+    card.appendChild(opts);
+    const expl = document.createElement('div'); expl.className = 'explain'; expl.textContent = item.explain;
+    card.appendChild(expl);
+    quiz.appendChild(card);
+  });
+}
+
+function choose(qi, oi, buttons, expl) {
+  if (buttons[0].disabled) return;
+  const right = questions[qi].answer;
+  buttons.forEach((b, i) => {
+    b.disabled = true;
+    if (i === right) { b.classList.add('correct'); b.appendChild(mark('✓')); }
+    if (i === oi && oi !== right) { b.classList.add('wrong'); b.appendChild(mark('✗')); }
+  });
+  expl.classList.add('show');
+  answered++; if (oi === right) correct++;
+  updateScore();
+}
+
+function mark(sym) { const s = document.createElement('span'); s.className = 'mark'; s.textContent = sym; return s; }
+
+function updateScore() {
+  answeredEl.textContent = answered; correctEl.textContent = correct;
+  barfill.style.width = (answered / questions.length * 100) + '%';
+  if (answered === questions.length) {
+    const pct = Math.round(correct / questions.length * 100);
+    let note = pct === 100 ? "Perfect — you can consume and verify an API by hand now." :
+               pct >= 70 ? "Solid. Re-read the ones you missed." :
+               "Worth another pass — then drill it against the API in the sandbox.";
+    doneEl.innerHTML = '';
+    const strong = document.createElement('strong');
+    strong.textContent = 'Score: ' + correct + ' / ' + questions.length + ' (' + pct + '%)';
+    doneEl.appendChild(strong); doneEl.appendChild(document.createElement('br'));
+    doneEl.appendChild(document.createTextNode(note));
+    doneEl.classList.add('show');
+  }
+}
+
+document.getElementById('reset').addEventListener('click', build);
+build();
+</script>
+</body>
+</html>

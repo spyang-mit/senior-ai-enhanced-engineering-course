@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 4 — Advanced Quiz (HTTP, deep cuts)</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --ink: #1c2024; --muted: #5b6570;
+    --border: #dfe3e8; --accent: #2f6fed; --code-bg: #f0f2f5;
+    --ok-bg: #e7f6ec; --ok-border: #34a853; --ok-ink: #1a6e34;
+    --no-bg: #fdeceb; --no-border: #e0483b; --no-ink: #b02a20;
+    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171a; --card: #1e2226; --ink: #e7ebef; --muted: #9aa4ae;
+      --border: #333a41; --accent: #5b8cff; --code-bg: #12151a;
+      --ok-bg: #16281c; --ok-border: #35a558; --ok-ink: #7fd79b;
+      --no-bg: #2a1917; --no-border: #d8564a; --no-ink: #f0a49c;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 18px 80px; }
+  header .badge { display:inline-block; font-size:.72rem; font-weight:700; text-transform:uppercase;
+    letter-spacing:.06em; color:#fff; background:var(--accent); border-radius:999px; padding:2px 10px; margin-bottom:8px; }
+  header h1 { font-size: 1.5rem; margin: 0 0 4px; letter-spacing: -.01em; }
+  header p { color: var(--muted); margin: 0 0 18px; }
+  .score { position: sticky; top: 0; z-index: 5; background: var(--card);
+    border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow);
+    padding: 12px 16px; margin: 0 0 22px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .score .nums { font-weight: 600; }
+  .score .bar { flex: 1 1 140px; height: 8px; background: var(--code-bg); border-radius: 999px; overflow: hidden; min-width: 120px; }
+  .score .bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s ease; }
+  .score button { font: inherit; font-size: .85rem; cursor: pointer; background: transparent;
+    color: var(--accent); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; }
+  .score button:hover { border-color: var(--accent); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    box-shadow: var(--shadow); padding: 18px 18px 6px; margin: 0 0 18px; }
+  .qnum { color: var(--muted); font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .qtext { margin: 4px 0 12px; font-weight: 500; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; margin: 0 0 14px; overflow-x: auto;
+    font: .86rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .opts { display: grid; gap: 8px; }
+  .opt { display: block; width: 100%; text-align: left; cursor: pointer; font: inherit; color: var(--ink);
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px;
+    transition: border-color .12s, background .12s; }
+  .opt:hover:not(:disabled) { border-color: var(--accent); }
+  .opt:disabled { cursor: default; }
+  .opt.correct { background: var(--ok-bg); border-color: var(--ok-border); color: var(--ok-ink); }
+  .opt.wrong { background: var(--no-bg); border-color: var(--no-border); color: var(--no-ink); }
+  .opt .mark { float: right; font-weight: 700; }
+  .explain { margin: 12px 0 14px; padding: 11px 14px; border-radius: 10px; background: var(--code-bg);
+    border: 1px solid var(--border); color: var(--muted); font-size: .92rem; display: none; }
+  .explain.show { display: block; }
+  .explain code { color: var(--ink); }
+  .done { text-align: center; padding: 22px; border-radius: 14px; border: 1px dashed var(--border);
+    color: var(--muted); margin-top: 8px; display: none; }
+  .done.show { display: block; }
+  .done strong { color: var(--ink); font-size: 1.15rem; }
+  footer { color: var(--muted); font-size: .85rem; text-align: center; margin-top: 30px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="badge">Advanced</div>
+    <h1>Module 4 — Advanced Quiz</h1>
+    <p>Past the basics: idempotency, PATCH, CORS preflight, redirect nuances, caching, rate limiting, TLS, auth schemes, and REST statelessness. Some of this is beyond the module on purpose — anything you miss is a real-world tool worth adding.</p>
+  </header>
+
+  <div class="score" role="status" aria-live="polite">
+    <span class="nums"><span id="answered">0</span> answered · <span id="correct">0</span> correct</span>
+    <span class="bar"><i id="barfill"></i></span>
+    <button id="reset" type="button">Reset</button>
+  </div>
+
+  <main id="quiz"></main>
+  <div class="done" id="done"></div>
+  <footer>The status code and the headers usually tell you what went wrong before the body does.</footer>
+</div>
+
+<script>
+const questions = [
+  {
+    q: "'Idempotent' means running the same request twice leaves the same end state. Which method is idempotent?",
+    options: [
+      "POST",
+      "POST and PUT are both idempotent",
+      "PUT",
+      "None of the HTTP methods are idempotent"
+    ],
+    answer: 2,
+    explain: "PUT sets an absolute state, so repeating it changes nothing further. POST creates a new resource each time — not idempotent. (GET and DELETE are idempotent too.)"
+  },
+  {
+    q: "A user with a valid token tries an action they're simply not allowed to perform. Which status fits best?",
+    options: ["401 Unauthorized", "403 Forbidden", "400 Bad Request", "404 Not Found"],
+    answer: 1,
+    explain: "403 Forbidden = 'I know who you are, but you may not.' 401 Unauthorized is for missing or invalid credentials — 'who are you?'"
+  },
+  {
+    q: "The API replaces the WHOLE contact on PUT, but you want to change just one field without resending the rest. Which method is designed for that?",
+    options: [
+      "PATCH",
+      "PUT with only the one changed field included",
+      "POST to the same URL again",
+      "GET with the new value passed in the query string"
+    ],
+    answer: 0,
+    explain: "PATCH applies a partial update. PUT semantically replaces the entire resource, so sending only one field can blank out the others."
+  },
+  {
+    q: "A browser frontend on another origin is about to POST JSON with an Authorization header. Just before the POST, what does the browser send on its own?",
+    options: [
+      "A second identical POST, as an automatic retry",
+      "A GET first, to warm up the connection",
+      "Nothing at all — modern browsers just send the POST straight away",
+      "A preflight OPTIONS request to check CORS permission"
+    ],
+    answer: 3,
+    explain: "For 'non-simple' cross-origin requests (custom headers, JSON POST), the browser first sends an OPTIONS preflight; the server's CORS headers decide whether the real request is allowed."
+  },
+  {
+    q: "An endpoint has moved for good, and you want clients and search engines to update their links. Which redirect says 'permanent'?",
+    options: [
+      "302 Found",
+      "301 Moved Permanently",
+      "307 Temporary Redirect",
+      "304 Not Modified"
+    ],
+    answer: 1,
+    explain: "301 = permanent (clients may cache it and rewrite links). 302 and 307 are temporary. 304 isn't a redirect at all — it's a caching response."
+  },
+  {
+    q: "A DELETE succeeds and there's nothing meaningful to send back. Which status is the clean choice?",
+    options: [
+      "204 No Content",
+      "200 OK with an empty JSON object",
+      "404 Not Found",
+      "201 Created"
+    ],
+    answer: 0,
+    explain: "204 No Content = success with an empty body. It fits DELETE (and some PUTs) when there's simply nothing to return."
+  },
+  {
+    q: "In a request you're sending, which header tells the server what format the BODY is in?",
+    options: [
+      "Accept",
+      "Authorization",
+      "Content-Type",
+      "Content-Length, which also states the format"
+    ],
+    answer: 2,
+    explain: "Content-Type describes the body you're sending (e.g. application/json). Accept says what you'd LIKE back. Content-Length is the size, not the format."
+  },
+  {
+    q: "REST treats GET as a 'safe' method. What does that imply?",
+    options: [
+      "GET requests are automatically encrypted end to end",
+      "GET is simply the fastest method available",
+      "Only GET responses are ever allowed to be cached anywhere",
+      "A GET should not change server state — it only reads"
+    ],
+    answer: 3,
+    explain: "Safe = no side effects; a GET should only read. That's why links, prefetches, and crawlers hit GETs freely — but a URL that deletes something must never be a GET."
+  },
+  {
+    q: "What does HTTPS (TLS) actually give you over plain HTTP?",
+    options: [
+      "Encryption of all traffic in transit, plus verification of the server's identity",
+      "Noticeably faster responses because the data is compressed",
+      "A guarantee that the server's code contains no bugs",
+      "Permission for clients to skip authentication entirely"
+    ],
+    answer: 0,
+    explain: "TLS encrypts the connection so nobody can read or tamper with it in transit, and it authenticates the server via its certificate. It says nothing about the server's code quality."
+  },
+  {
+    q: "A REST API uses bearer tokens. Where does the token belong on each request?",
+    options: [
+      "In the URL as ?token=...",
+      "In a cookie the browser sets automatically",
+      "In the Authorization header, as 'Bearer <token>'",
+      "In the JSON request body under a \"password\" field"
+    ],
+    answer: 2,
+    explain: "Bearer tokens go in the Authorization header: 'Authorization: Bearer <token>'. Putting secrets in the URL leaks them into server logs and browser history."
+  },
+  {
+    q: "A client re-requests something it fetched before, sending the ETag it received last time. Nothing has changed. What's the efficient response?",
+    options: [
+      "200 OK, re-sending the entire body every time",
+      "304 Not Modified, with no body",
+      "404 Not Found",
+      "204 No Content"
+    ],
+    answer: 1,
+    explain: "With a matching ETag the server returns 304 Not Modified and no body; the client reuses its cached copy. That's HTTP caching saving bandwidth."
+  },
+  {
+    q: "Your script hammers an API and starts getting a status that means 'slow down.' Which is it?",
+    options: [
+      "503 Service Unavailable",
+      "403 Forbidden",
+      "418 I'm a teapot",
+      "429 Too Many Requests"
+    ],
+    answer: 3,
+    explain: "429 Too Many Requests = rate limited; back off (a Retry-After header often says how long). 503 is the server being unavailable for other reasons."
+  },
+  {
+    q: "Which statement about JSON is TRUE?",
+    options: [
+      "JSON allows // comments for documentation",
+      "Object keys may be wrapped in single quotes instead of double",
+      "A trailing comma after the last item is invalid",
+      "Numbers must always be written inside quotes"
+    ],
+    answer: 2,
+    explain: "JSON forbids trailing commas (and comments, and single quotes); keys and strings use double quotes and numbers are bare. Those rules are exactly why 'jq . file' is a handy validator."
+  },
+  {
+    q: "REST APIs are described as 'stateless.' What does that mean?",
+    options: [
+      "Each request stands alone; the server keeps no client session between calls",
+      "The server permanently remembers every client that ever connected",
+      "The API is forbidden from persisting any data to a database, ever",
+      "Every response is byte-for-byte identical regardless of the request sent"
+    ],
+    answer: 0,
+    explain: "Stateless = each request is self-contained (it carries its own auth token, for example); the server doesn't rely on remembered session state between calls. It can still store data — that's the database, not per-connection memory."
+  }
+];
+
+const quiz = document.getElementById('quiz');
+const answeredEl = document.getElementById('answered');
+const correctEl = document.getElementById('correct');
+const barfill = document.getElementById('barfill');
+const doneEl = document.getElementById('done');
+let answered = 0, correct = 0;
+
+function build() {
+  quiz.innerHTML = ''; answered = 0; correct = 0; updateScore();
+  doneEl.className = 'done'; doneEl.textContent = '';
+  questions.forEach((item, qi) => {
+    const card = document.createElement('section'); card.className = 'card';
+    const num = document.createElement('div'); num.className = 'qnum';
+    num.textContent = 'Question ' + (qi + 1) + ' of ' + questions.length; card.appendChild(num);
+    const qt = document.createElement('p'); qt.className = 'qtext'; qt.textContent = item.q; card.appendChild(qt);
+    if (item.code) { const pre = document.createElement('pre'); pre.textContent = item.code; card.appendChild(pre); }
+    const opts = document.createElement('div'); opts.className = 'opts';
+    const buttons = [];
+    item.options.forEach((text, oi) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.textContent = text;
+      b.addEventListener('click', () => choose(qi, oi, buttons, expl));
+      opts.appendChild(b); buttons.push(b);
+    });
+    card.appendChild(opts);
+    const expl = document.createElement('div'); expl.className = 'explain'; expl.textContent = item.explain;
+    card.appendChild(expl);
+    quiz.appendChild(card);
+  });
+}
+
+function choose(qi, oi, buttons, expl) {
+  if (buttons[0].disabled) return;
+  const right = questions[qi].answer;
+  buttons.forEach((b, i) => {
+    b.disabled = true;
+    if (i === right) { b.classList.add('correct'); b.appendChild(mark('✓')); }
+    if (i === oi && oi !== right) { b.classList.add('wrong'); b.appendChild(mark('✗')); }
+  });
+  expl.classList.add('show');
+  answered++; if (oi === right) correct++;
+  updateScore();
+}
+
+function mark(sym) { const s = document.createElement('span'); s.className = 'mark'; s.textContent = sym; return s; }
+
+function updateScore() {
+  answeredEl.textContent = answered; correctEl.textContent = correct;
+  barfill.style.width = (answered / questions.length * 100) + '%';
+  if (answered === questions.length) {
+    const pct = Math.round(correct / questions.length * 100);
+    let note = pct === 100 ? "Genuinely HTTP-fluent — you'll read any API with confidence." :
+               pct >= 60 ? "Solid. The ones you missed are worth a quick read." :
+               "Worth another pass — these come up constantly once you're consuming real APIs.";
+    doneEl.innerHTML = '';
+    const strong = document.createElement('strong');
+    strong.textContent = 'Score: ' + correct + ' / ' + questions.length + ' (' + pct + '%)';
+    doneEl.appendChild(strong); doneEl.appendChild(document.createElement('br'));
+    doneEl.appendChild(document.createTextNode(note));
+    doneEl.classList.add('show');
+  }
+}
+
+document.getElementById('reset').addEventListener('click', build);
+build();
+</script>
+</body>
+</html>
