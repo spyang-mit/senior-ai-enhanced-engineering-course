@@ -90,10 +90,10 @@ const questions = [
   {
     q: "You run  chmod 1777 /tmp . What does the leading 1 turn on?",
     options: [
-      "The sticky bit: only a file's owner can delete it in that dir",
+      "The sticky bit: in that directory, only a file's own owner (or root) can delete it",
       "The setuid bit, so programs there always run as their owner root",
       "The setgid bit, so newly created files inherit the parent group",
-      "An archive flag telling backup tools to skip the directory entirely"
+      "An archive flag telling backup tools to skip the directory"
     ],
     answer: 0,
     explain: "A leading 1 is the sticky bit. On a world-writable dir like /tmp it means users can only delete or rename their OWN files. (2 = setgid, 4 = setuid.)"
@@ -159,8 +159,8 @@ const questions = [
     options: [
       "Nothing — capital X and lowercase x behave identically",
       "X strips the execute bit off everything instead of adding it",
-      "X also applies the change to hidden dotfiles that plain x skips over",
-      "X adds execute only to directories and already-executable files"
+      "X also applies to hidden dotfiles that plain x skips",
+      "X adds the execute bit only to directories and to files that are already executable"
     ],
     answer: 3,
     explain: "Capital X adds execute only to directories and to files that already have some execute bit set — perfect for 'make folders traversable without marking every file executable.'"

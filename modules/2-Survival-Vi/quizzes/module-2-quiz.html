@@ -92,7 +92,7 @@ const questions = [
   },
   {
     q: "You open a file, start typing, and the letters trigger strange jumps and deletions instead of appearing. Why?",
-    options: ["The file is read-only, so vi ignores your keystrokes", "vi is broken and needs to be reinstalled", "You must run vi with sudo to type in it", "You're in normal mode — press i to start typing"],
+    options: ["The file is read-only, so vi ignores you", "vi is broken and needs to be reinstalled", "You must run vi with sudo to type in it", "You're in normal mode, where letters are commands — press i to start typing"],
     answer: 3,
     explain: "vi starts in normal mode, where keys are commands (dd, x, …). Press i (or a) to enter insert mode; you'll see -- INSERT -- at the bottom."
   },
@@ -152,7 +152,7 @@ const questions = [
   },
   {
     q: "How do a and i differ?",
-    options: ["The two behave exactly the same in every situation", "a appends to the whole file while i inserts a file", "a is reserved for administrators only", "a inserts after the cursor; i before it"],
+    options: ["The two behave exactly the same in every situation", "a appends to the whole file while i inserts a file", "a is reserved for administrators only", "a starts inserting text AFTER the cursor, while i starts before it"],
     answer: 3,
     explain: "Both enter insert mode; a starts one character to the right of the cursor, i starts right at it. A jumps to the end of the line first."
   },

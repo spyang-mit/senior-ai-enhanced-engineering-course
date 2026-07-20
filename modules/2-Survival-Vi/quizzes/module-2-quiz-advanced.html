@@ -96,8 +96,8 @@ const questions = [
   {
     q: "The cursor is anywhere inside  \"hello world\"  (including the quotes). What does  ci\"  do?",
     options: [
-      "Deletes from the cursor forward to the next quote, then inserts text",
-      "Changes the text between the quotes, leaving the quotes in place",
+      "Deletes forward to the next quote, then inserts text",
+      "Changes the text between the quotes while leaving the surrounding quotes in place",
       "Comments out the entire current line",
       "Copies the quoted text into the yank register"
     ],
@@ -163,9 +163,9 @@ const questions = [
   {
     q: "What does  :%s/foo/bar/g  do?",
     options: [
-      "Replaces every 'foo' with 'bar' in the entire file",
+      "Replaces every 'foo' with 'bar' throughout the entire file, on every line",
       "Replaces only the first 'foo' on the current line",
-      "Searches for foo and bar and asks you about each hit",
+      "Searches for foo and bar, asking about each",
       "Swaps the two words foo and bar wherever they occur"
     ],
     answer: 0,

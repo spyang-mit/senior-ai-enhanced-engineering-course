@@ -101,8 +101,8 @@ const questions = [
   {
     q: "How does  git reset --soft HEAD~1  differ from  git reset --hard HEAD~1 ?",
     options: [
-      "There's no real difference; both simply move HEAD back by exactly one",
-      "--soft keeps your changes staged; --hard throws them away entirely",
+      "There's no real difference; both move HEAD back by one",
+      "--soft keeps your changes staged, while --hard discards them from the working tree entirely",
       "--hard keeps the changes staged while --soft deletes them",
       "--soft also rewrites the matching history up on the remote"
     ],
@@ -196,8 +196,8 @@ const questions = [
     q: "'git checkout <hash>' warns you about a 'detached HEAD'. What does that actually mean?",
     options: [
       "The repository has somehow become corrupted and unusable",
-      "You must re-clone the entire repository from scratch to recover safely",
-      "You're not on a branch; new commits won't stick unless you make one",
+      "You must re-clone the entire repository to recover",
+      "You're not on any branch, so new commits won't stick unless you make one to keep them",
       "HEAD has lost its network connection to the remote server"
     ],
     answer: 2,

@@ -163,9 +163,9 @@ const questions = [
   {
     q: "How do  echo hi > f  and  echo hi >> f  differ?",
     options: [
-      "> replaces the file's contents; >> appends to the end",
+      "> overwrites the file's entire existing contents, while >> appends onto the end",
       "They do the same thing; the second > is just decorative",
-      "> adds to the end of the file, while >> replaces it entirely",
+      "> appends to the end while >> overwrites",
       "Both of them delete the file f before writing"
     ],
     answer: 0,
@@ -241,8 +241,8 @@ const questions = [
     q: "An agent generated this cleanup line:  rm -rf $BUILD_DIR/  — why is it dangerous?",
     options: [
       "It isn't dangerous at all — this is the normal way to clean up",
-      "An empty or unquoted $BUILD_DIR can turn it into rm -rf /",
-      "rm simply can't do real damage, so there's nothing to worry about",
+      "An empty or unquoted $BUILD_DIR can expand the whole line into a catastrophic rm -rf /",
+      "rm can't really do damage, so there's nothing to worry about",
       "It only needs sudo added in front to run correctly and safely"
     ],
     answer: 1,
