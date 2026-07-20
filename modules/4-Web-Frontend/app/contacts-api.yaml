@@ -1,0 +1,159 @@
+# =============================================================================
+# Contacts API -- the CONTRACT for Module 4.
+#
+# This file is YAML. Lines starting with '#' (like these) are COMMENTS: notes
+# for humans that the machine ignores. Plain JSON has no comments at all, which
+# is a big reason API contracts are written in YAML -- the spec can document
+# itself. Everything below describes exactly how the API behaves.
+# =============================================================================
+openapi: 3.0.3
+info:
+  title: Contacts API
+  version: 1.0.0
+  description: >
+    A tiny contacts service for Module 4. It stores contacts (first name, last
+    name, phone) and supports full CRUD. This document is the CONTRACT: it is the
+    single source of truth for what the API does. Read it to know which endpoints
+    to call, what to send, and what to expect back -- and hand it to your AI when
+    you build a frontend against this API.
+
+servers:
+  - url: http://localhost:8080
+    description: The local API running inside your sandbox container
+
+tags:
+  - name: contacts
+    description: Create, read, update, and delete contacts
+
+paths:
+  # ---- The collection: list all contacts, or create a new one --------------
+  /contacts:
+    get:
+      tags: [contacts]
+      summary: List all contacts
+      description: Returns every contact. Use the optional `q` query parameter to filter by name.
+      parameters:
+        - name: q
+          in: query
+          required: false
+          description: Case-insensitive substring to match against first or last name.
+          schema: { type: string }
+      responses:
+        "200":
+          description: The list of contacts (possibly empty).
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Contact" }
+    post:
+      tags: [contacts]
+      summary: Create a contact
+      description: Adds a new contact. Requires a bearer token. All three fields are required.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewContact" }
+      responses:
+        "201":
+          description: Created. Returns the new contact, including its assigned id.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Contact" }
+        "400":
+          description: Invalid body (a required field is missing).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401":
+          description: Missing or invalid bearer token.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+
+  # ---- A single contact by id: read, replace, or delete it -----------------
+  /contacts/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: The contact's numeric id.
+        schema: { type: integer }
+    get:
+      tags: [contacts]
+      summary: Get one contact
+      responses:
+        "200":
+          description: The requested contact.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Contact" }
+        "404":
+          description: No contact with that id.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+    put:
+      tags: [contacts]
+      summary: Update a contact
+      description: Replaces the contact's fields. Requires a bearer token. Idempotent -- the same PUT twice yields the same result.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewContact" }
+      responses:
+        "200":
+          description: Updated. Returns the contact.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Contact" }
+        "400": { description: Invalid body. }
+        "401": { description: Missing or invalid bearer token. }
+        "404": { description: No contact with that id. }
+    delete:
+      tags: [contacts]
+      summary: Delete a contact
+      description: Removes the contact. Requires a bearer token.
+      security:
+        - bearerAuth: []
+      responses:
+        "204": { description: Deleted. No content in the response body. }
+        "401": { description: Missing or invalid bearer token. }
+        "404": { description: No contact with that id. }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: >
+        Send  Authorization: Bearer let-me-in  on write requests (POST, PUT,
+        DELETE). The demo token for this sandbox is literally  let-me-in .
+  schemas:
+    Contact:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        firstName: { type: string, example: "Ada" }
+        lastName: { type: string, example: "Lovelace" }
+        phone: { type: string, example: "555-0100" }
+      required: [id, firstName, lastName, phone]
+    NewContact:
+      type: object
+      description: The fields you send when creating or updating a contact.
+      properties:
+        firstName: { type: string, example: "Ada" }
+        lastName: { type: string, example: "Lovelace" }
+        phone: { type: string, example: "555-0100" }
+      required: [firstName, lastName, phone]
+    Error:
+      type: object
+      properties:
+        error: { type: string, example: "firstName is required" }
+      required: [error]

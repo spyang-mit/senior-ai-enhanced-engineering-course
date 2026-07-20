@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contacts (demo)</title>
+<style>
+  body { font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    max-width: 640px; margin: 40px auto; padding: 0 16px; color: #1c2024; }
+  h1 { margin: 0 0 4px; }
+  .sub { color: #5b6570; margin: 0 0 20px; }
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  input, button { font: inherit; padding: 8px 12px; border: 1px solid #cfd4da; border-radius: 8px; }
+  button { cursor: pointer; background: #f3f4f6; }
+  button:hover { border-color: #2f6fed; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e5e7eb; }
+  th { color: #5b6570; font-size: .85rem; text-transform: uppercase; letter-spacing: .03em; }
+  #status { color: #5b6570; padding: 10px 0; }
+</style>
+</head>
+<body>
+  <h1>Contacts</h1>
+  <p class="sub">A tiny read-only demo that reads the Contacts API. (Your project is to build a better one.)</p>
+
+  <div class="controls">
+    <input id="search" type="search" placeholder="Search by name…" aria-label="Search contacts">
+    <button id="reload">Reload</button>
+    <button id="slow">Reload (slow)</button>
+    <button id="boom">Simulate server error</button>
+  </div>
+
+  <div id="status"></div>
+  <table id="table" hidden>
+    <thead><tr><th>First</th><th>Last</th><th>Phone</th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+<script>
+  const statusEl = document.getElementById('status');
+  const table = document.getElementById('table');
+  const rows = document.getElementById('rows');
+  const search = document.getElementById('search');
+
+  // Load the contacts and render them. NOTE: this handles loading, success, and
+  // empty — but it does NOT handle an error response. That gap is intentional;
+  // finding it is one of your tasks.
+  async function load(extra = '') {
+    const q = search.value.trim();
+    let url = '/contacts';
+    const params = [];
+    if (q) params.push('q=' + encodeURIComponent(q));
+    if (extra) params.push(extra);
+    if (params.length) url += '?' + params.join('&');
+
+    table.hidden = true;
+    statusEl.textContent = 'Loading…';
+
+    const res = await fetch(url);
+    const data = await res.json();          // <-- assumes success; a 500 body isn't an array
+
+    rows.innerHTML = '';
+    data.forEach(c => {                      // <-- would throw on an error body (not iterable)
+      const tr = document.createElement('tr');
+      for (const field of ['firstName', 'lastName', 'phone']) {
+        const td = document.createElement('td');
+        td.textContent = c[field];
+        tr.appendChild(td);
+      }
+      rows.appendChild(tr);
+    });
+
+    if (data.length === 0) {
+      statusEl.textContent = 'No contacts found.';
+      table.hidden = true;
+    } else {
+      statusEl.textContent = data.length + ' contact(s).';
+      table.hidden = false;
+    }
+  }
+
+  document.getElementById('reload').onclick = () => load();
+  document.getElementById('slow').onclick   = () => load('delay=2');
+  document.getElementById('boom').onclick   = () => load('fail=1');
+  search.addEventListener('input', () => load());
+  load();
+</script>
+</body>
+</html>
