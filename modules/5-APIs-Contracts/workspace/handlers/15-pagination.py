@@ -6,6 +6,9 @@ Current flaw:
   • No total count.
 
 Fix: honor ?limit=N&offset=M. Return a paginated envelope with `items` and `total`.
+
+Shared state available (no imports needed):
+  PRODUCT_BY_ID, orders, _next_id_counter[0], _lock
 """
 
 import threading
@@ -18,9 +21,7 @@ def handle_create_order(data, user, idempotency_key=None):
         with _idem_lock:
             if idempotency_key in _idem_store:
                 oid = _idem_store[idempotency_key]
-                from reference_server import orders
-                with _idem_lock:
-                    order = orders.get(oid)
+                order = orders.get(oid)
                 if order:
                     return 200, order
 
@@ -36,22 +37,17 @@ def handle_create_order(data, user, idempotency_key=None):
             return 400, {"error": f"items[{i}].productId is required"}
         if qty is None or not isinstance(qty, int) or qty <= 0:
             return 400, {"error": f"items[{i}].qty must be a positive integer"}
-        from reference_server import PRODUCT_BY_ID
         if pid not in PRODUCT_BY_ID:
             return 400, {"error": f"unknown productId: {pid}"}
 
     total = 0
     for item in items:
-        from reference_server import PRODUCT_BY_ID
         price = PRODUCT_BY_ID[item["productId"]]["priceCents"]
         total += price * item["qty"]
 
-    from reference_server import _next_order_id, orders
-    import threading as _t
-    _l = _t.Lock()
-    with _l:
-        oid = _next_order_id
-        _next_order_id += 1
+    with _lock:
+        oid = _next_id_counter[0]
+        _next_id_counter[0] += 1
         order = {
             "id": oid,
             "userId": user,
@@ -68,9 +64,6 @@ def handle_create_order(data, user, idempotency_key=None):
     return 201, order
 
 def handle_get_order(order_id, user):
-    import threading
-    _lock = threading.Lock()
-    from reference_server import orders
     with _lock:
         order = orders.get(order_id)
     if order is None:
@@ -80,9 +73,6 @@ def handle_get_order(order_id, user):
     return 200, order
 
 def handle_cancel_order(order_id, user):
-    import threading
-    _lock = threading.Lock()
-    from reference_server import orders
     with _lock:
         order = orders.get(order_id)
     if order is None:
@@ -99,14 +89,11 @@ def handle_cancel_order(order_id, user):
 
 def handle_paginated_orders(query, user):
     """List orders with pagination."""
-    import threading
-    _lock = threading.Lock()
-    from reference_server import orders
     with _lock:
         all_items = [o for o in orders.values() if o["userId"] == user]
 
     total = len(all_items)
-    limit = 20  # default page size
+    limit = 20
     offset = 0
     try:
         limit = int(query.get("limit", 20))

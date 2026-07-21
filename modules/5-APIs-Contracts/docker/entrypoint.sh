@@ -12,23 +12,18 @@ mkdir -p /home/dev/playground/handlers
 # Copy the contract YAML into the playground for reference.
 cp /opt/server/orders-api.yaml /home/dev/playground/orders-api.yaml 2>/dev/null || true
 
-# Copy initial handler stubs from the workspace mount (if mounted) or from
-# the reference server's seed directory. The host mount at /home/dev/workspace
-# is where the learner's code lives; if it exists, use it. Otherwise seed
-# from the image's seed directory.
-if [ -d /home/dev/workspace/handlers ]; then
-  echo "workspace/ mounted — using host-side handler files"
-else
-  echo "workspace/ not mounted — seeding fresh stubs from image"
-  mkdir -p /home/dev/workspace/handlers
-  if [ -d /opt/server/handlers ]; then
-    cp -r /opt/server/handlers/* /home/dev/workspace/handlers/
-  fi
-  # Also seed the contract YAML
-  cp /opt/server/orders-api.yaml /home/dev/workspace/orders-api.yaml 2>/dev/null || true
-fi
+# Copy the contract YAML into the workspace too, so the learner has it on host.
+# If workspace is mounted, the host already has it — this is a safety seed.
+mkdir -p /home/dev/workspace
+cp /opt/server/orders-api.yaml /home/dev/workspace/orders-api.yaml 2>/dev/null || true
 
-chown -R dev:dev /home/dev/playground /home/dev/workspace
+# Try chown, but don't fail on macOS-style bind mounts where chown of a
+# mounted volume can fail. The server runs as 'dev' via su, so permissions
+# matter only for the playground (which is owned by dev).
+chown -R dev:dev /home/dev/playground 2>/dev/null || true
+chown -R dev:dev /home/dev/.server 2>/dev/null || true
+# chown on workspace/ is best-effort — bind mounts on macOS may refuse it.
+chown -R dev:dev /home/dev/workspace 2>/dev/null || true
 
 rm -rf /home/dev/.lesson
 

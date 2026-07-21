@@ -12,14 +12,17 @@ Requirements:
   • Server-authoritative: status changes, not client-settable
   • Correct codes: 200 success, 404 not found, 403 forbidden, 409 wrong status
 
-Starter (flawed) — fix it.
+Shared state available (no imports needed):
+  PRODUCT_BY_ID, orders, _next_id_counter[0], _lock
 """
+
+import threading
+
+_idem_lock = threading.Lock()
+_idem_store = {}
 
 def handle_refund_order(order_id, user):
     """Refund an order. (Stub — learner completes this.)"""
-    import threading
-    _lock = threading.Lock()
-    from reference_server import orders
     with _lock:
         order = orders.get(order_id)
     if order is None:

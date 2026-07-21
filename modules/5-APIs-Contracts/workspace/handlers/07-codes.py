@@ -6,6 +6,9 @@ Current flaws:
   • GET /orders/{id} for missing order returns 200 with null instead of 404
 
 Fix: create → 201, missing → 404.
+
+Shared state available (no imports needed):
+  PRODUCT_BY_ID, orders, _next_id_counter[0], _lock
 """
 
 def handle_create_order(data, user):
@@ -22,22 +25,17 @@ def handle_create_order(data, user):
             return 400, {"error": f"items[{i}].productId is required"}
         if qty is None or not isinstance(qty, int) or qty <= 0:
             return 400, {"error": f"items[{i}].qty must be a positive integer"}
-        from reference_server import PRODUCT_BY_ID
         if pid not in PRODUCT_BY_ID:
             return 400, {"error": f"unknown productId: {pid}"}
 
     total = 0
     for item in items:
-        from reference_server import PRODUCT_BY_ID
         price = PRODUCT_BY_ID[item["productId"]]["priceCents"]
         total += price * item["qty"]
 
-    import threading
-    _lock = threading.Lock()
-    from reference_server import _next_order_id, orders
     with _lock:
-        oid = _next_order_id
-        _next_order_id += 1
+        oid = _next_id_counter[0]
+        _next_id_counter[0] += 1
         order = {
             "id": oid,
             "userId": user,
@@ -50,9 +48,6 @@ def handle_create_order(data, user):
 
 def handle_get_order(order_id, user):
     """Get one order — return 404 if missing."""
-    import threading
-    _lock = threading.Lock()
-    from reference_server import orders
     with _lock:
         order = orders.get(order_id)
     if order is None:

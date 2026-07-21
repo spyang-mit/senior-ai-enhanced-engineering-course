@@ -5,8 +5,14 @@ Serves the orders API on port 8080 with a fixed product catalog, two demo users
 (Alice, Bob), and deliberately FLAWED default implementations. Pluggable handlers
 from the mounted workspace override specific endpoints as the learner hardens them.
 
-The server imports handler functions from /home/dev/workspace/handlers/active.py
+The server loads handler functions from /home/dev/workspace/handlers/active.py
 at startup. Each task's setup() symlinks the correct handler file there.
+
+IMPORTANT — handler files share state with this server by accessing names from
+the MODULE's global scope. They do NOT import reference_server; instead they
+reference PRODUCT_BY_ID, orders, _next_order_id, _lock etc. directly. The
+load_handlers() function injects those names into the exec namespace so they
+"just work" without import magic.
 """
 import json, os, re, threading, sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -27,11 +33,12 @@ PRODUCT_BY_ID = {p["id"]: p for p in PRODUCTS}
 # --- orders store (in-memory, deliberately flawed by default) ----------------
 _lock = threading.Lock()
 orders = {}          # order_id -> dict
-_next_order_id = 1
+# Mutable container for next order id — handlers in exec() can modify this
+# because they share the list object reference (integers are immutable and +=
+# would create a local variable in exec).
+_next_id_counter = [1]
 
 # --- auth --------------------------------------------------------------------
-# Two demo users. Tokens are deliberately simple strings so the learner can curl
-# with a literal header. The server extracts the username from the token.
 TOKENS = {
     "alice-token": "Alice",
     "bob-token":   "Bob",
@@ -54,12 +61,27 @@ def log(method, path, status):
         pass
 
 # --- handler loading ---------------------------------------------------------
+# Shared state names that handler files can reference directly
+_SHARED_NAMES = [
+    "PRODUCTS", "PRODUCT_BY_ID", "orders", "_next_id_counter", "_lock",
+    "TOKENS", "_auth_user", "log", "ACCESS_LOG",
+]
+
 def load_handlers():
     """Load handler functions from the active handler file.
-    Returns a dict of function name -> callable."""
+
+    Handler files share the server's global state by referencing names like
+    PRODUCT_BY_ID, orders, _lock directly — no imports needed. This function
+    injects those names into the exec namespace.
+    """
     if not os.path.exists(HANDLER_FILE):
         return {}
     ns = {}
+    # Inject shared state so handlers can reference PRODUCT_BY_ID etc. directly
+    g = globals()
+    for name in _SHARED_NAMES:
+        if name in g:
+            ns[name] = g[name]
     with open(HANDLER_FILE) as f:
         code = compile(f.read(), HANDLER_FILE, "exec")
         exec(code, ns)
@@ -75,19 +97,16 @@ def handler(name, default):
 # Default (deliberately flawed) implementations
 # =============================================================================
 
-def default_create_order(data, user):
+def default_create_order(data, user, idempotency_key=None):
     """Naive create: non-idempotent, trusts client price, no validation."""
-    # Accept any items without validation
     items = data.get("items", [])
-    # Trust the client's totalCents if provided
     total = data.get("totalCents")
     if total is None:
         total = sum(PRODUCT_BY_ID.get(i.get("productId"), {}).get("priceCents", 0) * i.get("qty", 1)
                     for i in items)
-    global _next_order_id
     with _lock:
-        oid = _next_order_id
-        _next_order_id += 1
+        oid = _next_id_counter[0]
+        _next_id_counter[0] += 1
         order = {
             "id": oid,
             "userId": user,
@@ -101,7 +120,6 @@ def default_create_order(data, user):
 def default_get_orders(query, user):
     """Naive list: returns ALL orders (no owner filter), no pagination."""
     with _lock:
-        # Deliberate flaw: returns every order, not just the caller's
         items = list(orders.values())
     return 200, items
 
@@ -119,8 +137,6 @@ def default_cancel_order(order_id, user):
         order = orders.get(order_id)
         if order is None:
             return 404, {"error": "order not found"}
-        # Flaw: client can cancel ANY order, not just their own
-        # Flaw: cancelling twice changes status each time
         if order["status"] == "pending":
             order["status"] = "cancelled"
         elif order["status"] == "cancelled":
@@ -132,6 +148,10 @@ def default_cancel_order(order_id, user):
 def default_paginated_orders(query, user):
     """Naive pagination: ignores limit/offset."""
     return default_get_orders(query, user)
+
+def default_refund_order(order_id, user):
+    """Default refund: not implemented (returns 404). Capstone adds this."""
+    return 404, {"error": "refund endpoint not implemented — see Task 20"}
 
 # =============================================================================
 # HTTP handler
@@ -190,7 +210,7 @@ class Handler(BaseHTTPRequestHandler):
     def _order_id(self):
         m = re.fullmatch(r"/orders/(\d+)(?:/(cancel|refund))?", self._path())
         if m:
-            return int(m.group(1)), m.group(2)  # (id, action) or (id, None)
+            return int(m.group(1)), m.group(2)
         m = re.fullmatch(r"/orders/(\d+)", self._path())
         return (int(m.group(1)), None) if m else None
 
@@ -207,7 +227,6 @@ class Handler(BaseHTTPRequestHandler):
             user = _auth_user(self.headers)
             if user is None:
                 return self._send_json(401, {"error": "missing or invalid bearer token"})
-            # Use handler if loaded, else default
             fn = handler("handle_paginated_orders", default_paginated_orders)
             status, body = fn(q, user)
             return self._send_json(status, body)
@@ -233,16 +252,22 @@ class Handler(BaseHTTPRequestHandler):
             return self._send_json(400, {"error": "body must be valid JSON"})
 
         if p == "/orders":
+            # Pass Idempotency-Key to handlers that support it
+            idem_key = self.headers.get("Idempotency-Key", "")
             fn = handler("handle_create_order", default_create_order)
-            status, body = fn(data, user)
+            status, body = fn(data, user, idempotency_key=idem_key or None)
             return self._send_json(status, body)
 
-        # POST /orders/{id}/cancel
+        # POST /orders/{id}/cancel  and  POST /orders/{id}/refund
         oid = self._order_id()
         if oid is not None:
             oid, action = oid
             if action == "cancel":
                 fn = handler("handle_cancel_order", default_cancel_order)
+                status, body = fn(oid, user)
+                return self._send_json(status, body)
+            if action == "refund":
+                fn = handler("handle_refund_order", default_cancel_order)
                 status, body = fn(oid, user)
                 return self._send_json(status, body)
 

@@ -7,6 +7,12 @@ Current flaws:
   • missing items array is accepted
 
 Harden: reject qty <= 0 → 400, unknown productId → 400, missing items → 400.
+
+Shared state available (no imports needed):
+  PRODUCT_BY_ID — dict of productId -> product dict
+  orders        — dict of order_id -> order dict
+  _next_id_counter[0] — next id to assign
+  _lock         — threading.Lock for orders store
 """
 
 def handle_create_order(data, user):
@@ -23,8 +29,6 @@ def handle_create_order(data, user):
             return 400, {"error": f"items[{i}].productId is required"}
         if qty is None or not isinstance(qty, int) or qty <= 0:
             return 400, {"error": f"items[{i}].qty must be a positive integer"}
-        # Check product exists
-        from reference_server import PRODUCT_BY_ID
         if pid not in PRODUCT_BY_ID:
             return 400, {"error": f"unknown productId: {pid}"}
 
@@ -34,13 +38,9 @@ def handle_create_order(data, user):
         price = PRODUCT_BY_ID[item["productId"]]["priceCents"]
         total += price * item["qty"]
 
-    # Create the order
-    import threading
-    _lock = threading.Lock()
-    from reference_server import _next_order_id, orders
     with _lock:
-        oid = _next_order_id
-        _next_order_id += 1
+        oid = _next_id_counter[0]
+        _next_id_counter[0] += 1
         order = {
             "id": oid,
             "userId": user,

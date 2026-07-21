@@ -9,11 +9,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # websocat — tiny WebSocket client for the real-time tasks.
-# Download a prebuilt binary; no Rust needed.
-RUN WEBSOCAT_URL="https://github.com/vi/websocat/releases/download/v1.13.0/websocat_1.13.0-1_amd64.deb" \
-    && curl -sL "$WEBSOCAT_URL" -o /tmp/websocat.deb \
-    && dpkg -i /tmp/websocat.deb \
-    && rm /tmp/websocat.deb \
+# Download a prebuilt static binary (no .deb package in this release).
+RUN curl -sL "https://github.com/vi/websocat/releases/download/v1.13.0/websocat.x86_64-unknown-linux-musl" \
+        -o /usr/local/bin/websocat \
+    && chmod 755 /usr/local/bin/websocat \
     && websocat --version
 
 RUN useradd -m -s /bin/bash dev
