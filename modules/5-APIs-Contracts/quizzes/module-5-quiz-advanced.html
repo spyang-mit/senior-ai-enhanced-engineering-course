@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 5 Quiz (Advanced) — APIs, contracts & the client/server boundary</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --ink: #1c2024; --muted: #5b6570;
+    --border: #dfe3e8; --accent: #2f6fed; --code-bg: #f0f2f5;
+    --ok-bg: #e7f6ec; --ok-border: #34a853; --ok-ink: #1a6e34;
+    --no-bg: #fdeceb; --no-border: #e0483b; --no-ink: #b02a20;
+    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+    --adv-badge: #a855f7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171a; --card: #1e2226; --ink: #e7ebef; --muted: #9aa4ae;
+      --border: #333a41; --accent: #5b8cff; --code-bg: #12151a;
+      --ok-bg: #16281c; --ok-border: #35a558; --ok-ink: #7fd79b;
+      --no-bg: #2a1917; --no-border: #d8564a; --no-ink: #f0a49c;
+      --shadow: none;
+      --adv-badge: #c084fc;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 18px 80px; }
+  header h1 { font-size: 1.5rem; margin: 0 0 4px; letter-spacing: -.01em; }
+  header .badge { display: inline-block; font-size: .7rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; color: #fff; background: var(--adv-badge); padding: 2px 10px;
+    border-radius: 999px; vertical-align: middle; margin-left: 10px; }
+  header p { color: var(--muted); margin: 0 0 18px; }
+  .score { position: sticky; top: 0; z-index: 5; background: var(--card);
+    border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow);
+    padding: 12px 16px; margin: 0 0 22px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .score .nums { font-weight: 600; }
+  .score .bar { flex: 1 1 140px; height: 8px; background: var(--code-bg); border-radius: 999px; overflow: hidden; min-width: 120px; }
+  .score .bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s ease; }
+  .score button { font: inherit; font-size: .85rem; cursor: pointer; background: transparent;
+    color: var(--accent); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; }
+  .score button:hover { border-color: var(--accent); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    box-shadow: var(--shadow); padding: 18px 18px 6px; margin: 0 0 18px; }
+  .qnum { color: var(--muted); font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .qtext { margin: 4px 0 12px; font-weight: 500; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; margin: 0 0 14px; overflow-x: auto;
+    font: .86rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .opts { display: grid; gap: 8px; }
+  .opt { display: block; width: 100%; text-align: left; cursor: pointer; font: inherit; color: var(--ink);
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px;
+    transition: border-color .12s, background .12s; }
+  .opt:hover:not(:disabled) { border-color: var(--accent); }
+  .opt:disabled { cursor: default; }
+  .opt.correct { background: var(--ok-bg); border-color: var(--ok-border); color: var(--ok-ink); }
+  .opt.wrong { background: var(--no-bg); border-color: var(--no-border); color: var(--no-ink); }
+  .opt .mark { float: right; font-weight: 700; }
+  .explain { margin: 12px 0 14px; padding: 11px 14px; border-radius: 10px; background: var(--code-bg);
+    border: 1px solid var(--border); color: var(--muted); font-size: .92rem; display: none; }
+  .explain.show { display: block; }
+  .explain code { color: var(--ink); }
+  .done { text-align: center; padding: 22px; border-radius: 14px; border: 1px dashed var(--border);
+    color: var(--muted); margin-top: 8px; display: none; }
+  .done.show { display: block; }
+  .done strong { color: var(--ink); font-size: 1.15rem; }
+  footer { color: var(--muted); font-size: .85rem; text-align: center; margin-top: 30px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Module 5 Quiz <span class="badge">Advanced</span></h1>
+    <p>Beyond the module: real-world API design, rate limiting, PATCH vs PUT, CORS preflight, ETags, TLS, OAuth2 flows, gRPC vs REST, and GraphQL. Some of this is beyond the module on purpose — anything you miss is a real tool worth adding.</p>
+  </header>
+
+  <div class="score" role="status" aria-live="polite">
+    <span class="nums"><span id="answered">0</span> answered · <span id="correct">0</span> correct</span>
+    <span class="bar"><i id="barfill"></i></span>
+    <button id="reset" type="button">Reset</button>
+  </div>
+
+  <main id="quiz"></main>
+  <div class="done" id="done"></div>
+  <footer>Some of this is beyond the module — anything you miss is a real tool worth knowing.</footer>
+</div>
+
+<script>
+// Balanced: A=4, B=3, C=4, D=3
+const questions = [
+  {
+    q: "What is the difference between PATCH and PUT in REST?",
+    options: [
+      "They are synonyms — both replace the resource entirely",
+      "PUT replaces the entire resource; PATCH applies a partial update to specific fields",
+      "PATCH creates a new resource; PUT updates an existing one",
+      "PUT is idempotent; PATCH is not — that's the only difference"
+    ],
+    answer: 1,
+    explain: "PUT replaces the entire resource at a known URL (idempotent). PATCH applies partial changes to specific fields — it is NOT necessarily idempotent because applying the same patch twice may differ from replacing the whole resource."
+  },
+  {
+    q: "What does a CORS preflight request (OPTIONS) check?",
+    options: [
+      "Whether the server is online and accepting requests",
+      "Whether the browser is allowed to make a cross-origin request with specific headers or methods",
+      "Whether the client's SSL certificate is valid",
+      "Whether the request body is valid JSON"
+    ],
+    answer: 3,
+    explain: "CORS preflight (OPTIONS) checks if the cross-origin request is safe to send. The browser sends it before a 'non-simple' request (custom headers, non-GET methods) and the server responds with Access-Control-Allow-* headers."
+  },
+  {
+    q: "What is the purpose of an ETag in HTTP?",
+    options: [
+      "It encrypts the request body end-to-end",
+      "It's a fingerprint of a resource version — the client sends If-None-Match to avoid re-downloading unchanged content",
+      "It authenticates the client via a bearer token",
+      "It tags API endpoints for OpenAPI documentation"
+    ],
+    answer: 2,
+    explain: "ETag is a resource fingerprint (hash). The client caches the ETag and sends If-None-Match on re-request. If the resource hasn't changed, the server returns 304 Not Modified — saving bandwidth."
+  },
+  {
+    q: "What does the HTTP 429 Too Many Requests status code mean?",
+    options: [
+      "The request body is too large for the server to process",
+      "The client has exceeded a rate limit — slow down",
+      "The server is too busy to handle the request right now",
+      "The client sent more than one request at the same time"
+    ],
+    answer: 0,
+    explain: "429 Too Many Requests is the rate-limiting status. The server tells the client 'you've exceeded your quota — slow down.' It often includes a Retry-After header so the client knows how long to wait."
+  },
+  {
+    q: "In OAuth2, what is the difference between the 'client credentials' grant and the 'authorization code' grant?",
+    options: [
+      "They are the same — both exchange a secret for a token",
+      "Client credentials: the application authenticates itself (no user). Authorization code: a user authenticates via a browser redirect and the app exchanges the code for a token",
+      "Client credentials are for mobile apps; authorization code is for server-side apps",
+      "Client credentials require a JWT; authorization code requires a session cookie"
+    ],
+    answer: 1,
+    explain: "Client credentials grant: the app uses its own client_id + client_secret to get a token — no user involved (machine-to-machine). Authorization code grant: the user authenticates via a browser redirect, and the app exchanges the resulting code for a token — the app never sees the user's password."
+  },
+  {
+    q: "Why would an API choose gRPC over REST?",
+    options: [
+      "gRPC is simpler — it uses JSON over HTTP, just like REST",
+      "gRPC uses HTTP/2, binary serialization (Protobuf), and bidirectional streaming — better performance for high-throughput or real-time systems",
+      "gRPC requires no contract — the server infers the API from implementation",
+      "gRPC is the only option for mobile clients"
+    ],
+    answer: 2,
+    explain: "gRPC uses HTTP/2 for multiplexing, Protobuf for compact binary serialization, and supports bidirectional streaming. It's faster than REST JSON for high-throughput systems. The trade-off: stricter contract (requires .proto files) and less browser-native support."
+  },
+  {
+    q: "What is the main risk of using '200 OK' for everything, including errors?",
+    options: [
+      "It violates the HTTP specification and proxies may block the response",
+      "The client can't distinguish success from failure without parsing the body — error handling becomes unreliable",
+      "It's slightly slower because the body is larger",
+      "200 OK responses cannot carry JSON bodies"
+    ],
+    answer: 2,
+    explain: "If every response is 200 OK with 'success: false' in the body, the client must parse every response to check for errors. Proxies, caches, and monitoring tools rely on status codes to understand what happened."
+  },
+  {
+    q: "What is TLS (Transport Layer Security) doing during an HTTPS request?",
+    options: [
+      "Compressing the request body to reduce bandwidth",
+      "Encrypting the connection between client and server so data in transit cannot be read or tampered with",
+      "Authenticating the client before the HTTP request begins",
+      "Caching the response so subsequent requests are instant"
+    ],
+    answer: 1,
+    explain: "TLS encrypts the TCP connection — every byte between client and server is encrypted, including the HTTP request line, headers, and body. It also authenticates the server."
+  },
+  {
+    q: "In HTTP caching, what does the 'Cache-Control: no-cache' directive actually mean?",
+    options: [
+      "The response must never be stored in any cache",
+      "The cache must check with the server (revalidate) before using a stored response — it does NOT mean 'don't store'",
+      "The response is valid for zero seconds — always expired",
+      "The client must delete all cached data immediately"
+    ],
+    answer: 1,
+    explain: "'no-cache' means the cache MAY store the response but MUST revalidate with the server before using it. It does NOT mean 'don't cache.' The directive that means 'don't store at all' is 'no-store.'"
+  },
+  {
+    q: "What is the purpose of HTTP 503 Service Unavailable vs 504 Gateway Timeout?",
+    options: [
+      "503 = server is temporarily overloaded or down; 504 = an upstream server/proxy timed out",
+      "503 = the request was malformed; 504 = the server took too long to respond",
+      "503 = the client is unauthorized; 504 = the client sent too many requests",
+      "503 = the resource was moved; 504 = the resource doesn't exist"
+    ],
+    answer: 0,
+    explain: "503 Service Unavailable: the server itself is overloaded or undergoing maintenance. 504 Gateway Timeout: the server is a proxy/gateway and the upstream server it depends on didn't respond in time."
+  },
+  {
+    q: "When would you use GraphQL over a REST API?",
+    options: [
+      "When you want the client to request exactly the fields it needs, avoiding over-fetching or under-fetching, especially for complex data graphs",
+      "GraphQL is always better than REST — it's newer",
+      "When you need a fixed set of endpoints with predictable responses",
+      "When your API has only one resource type"
+    ],
+    answer: 0,
+    explain: "GraphQL lets the client specify which fields it needs — no over-fetching (getting fields you don't use) or under-fetching (needing multiple REST calls). Trade-off: more complex caching, no standard HTTP caching per query."
+  },
+  {
+    q: "What is the difference between 'Bearer' token auth and 'Basic' auth in HTTP?",
+    options: [
+      "Bearer uses a shared secret; Basic uses a public key — different cryptographic properties",
+      "Bearer sends the token in the Authorization header; Basic sends username:password Base64-encoded",
+      "Bearer is stateless (token alone proves identity); Basic requires the server to look up the username/password on every request",
+      "Bearer tokens expire; Basic credentials don't — that's the only difference"
+    ],
+    answer: 2,
+    explain: "Bearer auth: the token IS the credential — the server validates the token without looking up a database. Basic auth sends username:password on every request, so the server must verify credentials each time (slower, riskier)."
+  },
+  {
+    q: "What is the purpose of HTTP 422 Unprocessable Entity vs 400 Bad Request?",
+    options: [
+      "400 = the request body syntax is wrong (not valid JSON). 422 = the body IS valid syntax but the server can't process it (e.g. validation semantics)",
+      "They are synonyms — both mean 'bad request' with no distinction",
+      "400 is for auth errors; 422 is for validation errors",
+      "400 is a client error; 422 is a server error"
+    ],
+    answer: 0,
+    explain: "400 Bad Request: malformed syntax (invalid JSON, wrong encoding). 422 Unprocessable Entity (from WebDAV): the body IS syntactically valid but semantically wrong (e.g. valid JSON but qty=0)."
+  },
+  {
+    q: "What does the 'Retry-After' header tell a client that received a 429 or 503?",
+    options: [
+      "The exact time the server will be back online",
+      "How many seconds to wait before retrying — the client should not retry before that time",
+      "The maximum number of retries the client is allowed",
+      "The URL to redirect to after the retry delay"
+    ],
+    answer: 3,
+    explain: "Retry-After tells the client how many seconds to wait (or a specific date) before retrying. Without it, the client has to guess — too soon wastes resources, too late means unnecessary downtime."
+  }
+];
+
+const quiz = document.getElementById('quiz');
+const answeredEl = document.getElementById('answered');
+const correctEl = document.getElementById('correct');
+const barfill = document.getElementById('barfill');
+const doneEl = document.getElementById('done');
+let answered = 0, correct = 0;
+
+function build() {
+  quiz.innerHTML = ''; answered = 0; correct = 0; updateScore();
+  doneEl.className = 'done'; doneEl.textContent = '';
+  questions.forEach((item, qi) => {
+    const card = document.createElement('section'); card.className = 'card';
+    const num = document.createElement('div'); num.className = 'qnum';
+    num.textContent = 'Question ' + (qi + 1) + ' of ' + questions.length; card.appendChild(num);
+    const qt = document.createElement('p'); qt.className = 'qtext'; qt.textContent = item.q; card.appendChild(qt);
+    if (item.code) { const pre = document.createElement('pre'); pre.textContent = item.code; card.appendChild(pre); }
+    const opts = document.createElement('div'); opts.className = 'opts';
+    const buttons = [];
+    item.options.forEach((text, oi) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.textContent = text;
+      b.addEventListener('click', () => choose(qi, oi, buttons, expl));
+      opts.appendChild(b); buttons.push(b);
+    });
+    card.appendChild(opts);
+    const expl = document.createElement('div'); expl.className = 'explain'; expl.textContent = item.explain;
+    card.appendChild(expl);
+    quiz.appendChild(card);
+  });
+}
+
+function choose(qi, oi, buttons, expl) {
+  if (buttons[0].disabled) return;
+  const right = questions[qi].answer;
+  buttons.forEach((b, i) => {
+    b.disabled = true;
+    if (i === right) { b.classList.add('correct'); b.appendChild(mark('✓')); }
+    if (i === oi && oi !== right) { b.classList.add('wrong'); b.appendChild(mark('✗')); }
+  });
+  expl.classList.add('show');
+  answered++; if (oi === right) correct++;
+  updateScore();
+}
+
+function mark(sym) { const s = document.createElement('span'); s.className = 'mark'; s.textContent = sym; return s; }
+
+function updateScore() {
+  answeredEl.textContent = answered; correctEl.textContent = correct;
+  barfill.style.width = (answered / questions.length * 100) + '%';
+  if (answered === questions.length) {
+    const pct = Math.round(correct / questions.length * 100);
+    let note = pct === 100 ? "Perfect — you know REST, its caveats, and the real-world alternatives." :
+               pct >= 60 ? "Good awareness. Read up on the ones you missed — each is worth knowing." :
+               "Some of these are beyond the module — read the explainers, then try again.";
+    doneEl.innerHTML = '';
+    const strong = document.createElement('strong');
+    strong.textContent = 'Score: ' + correct + ' / ' + questions.length + ' (' + pct + '%)';
+    doneEl.appendChild(strong); doneEl.appendChild(document.createElement('br'));
+    doneEl.appendChild(document.createTextNode(note));
+    doneEl.classList.add('show');
+  }
+}
+
+document.getElementById('reset').addEventListener('click', build);
+build();
+</script>
+</body>
+</html>

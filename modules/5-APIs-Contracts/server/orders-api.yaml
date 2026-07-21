@@ -1,0 +1,222 @@
+# =============================================================================
+# Orders API — the CONTRACT for Module 5.
+#
+# This is a DELIBERATELY INCOMPLETE draft. You will add:
+#   • Missing error cases (409 Conflict, 403 Forbidden)
+#   • Missing endpoints (cancel, refund)
+#   • Status-code discipline (201 vs 200 for creates)
+#   • Pagination parameters
+#
+# The server implements what's here — and exploits what isn't. Your job is
+# to fill the gaps so the contract is the full, honest specification.
+# =============================================================================
+openapi: 3.0.3
+info:
+  title: Orders API
+  version: 1.0.0
+  description: >
+    A tiny store's orders service for Module 5. Products are fixed (server-owned
+    prices); orders are created, listed, read, and cancelled. Two demo users
+    (Alice, Bob) with bearer tokens so authorization is real.
+
+servers:
+  - url: http://localhost:8080
+    description: The orders API inside your sandbox container
+
+tags:
+  - name: products
+    description: Read the product catalog
+  - name: orders
+    description: Create, list, read, and cancel orders
+
+paths:
+  # ---- Products -------------------------------------------------------------
+  /products:
+    get:
+      tags: [products]
+      summary: List the product catalog
+      description: Returns the fixed catalog of products. No auth required.
+      responses:
+        "200":
+          description: The product catalog.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+
+  # ---- Orders collection ----------------------------------------------------
+  /orders:
+    get:
+      tags: [orders]
+      summary: List your orders
+      description: Returns the orders belonging to the authenticated user.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: Maximum number of orders to return.
+          schema: { type: integer, minimum: 1 }
+        - name: offset
+          in: query
+          required: false
+          description: Number of orders to skip.
+          schema: { type: integer, minimum: 0 }
+      responses:
+        "200":
+          description: A list of orders (possibly empty).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Order"
+        "401":
+          description: Missing or invalid bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+    post:
+      tags: [orders]
+      summary: Create an order
+      description: Creates a new order. The server computes the total from the
+        catalog — any totalCents sent by the client is ignored.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewOrder"
+      responses:
+        "201":
+          description: Created. Returns the new order, including its id and status.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          description: Invalid body (unknown product, qty <= 0, missing items).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Missing or invalid bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: Conflict — e.g. duplicate idempotency-key mismatch.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ---- Single order ---------------------------------------------------------
+  /orders/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: The order's numeric id.
+        schema: { type: integer }
+    get:
+      tags: [orders]
+      summary: Get one order
+      description: Returns a single order by id. Only the order's owner can see it.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: The requested order.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "401":
+          description: Missing or invalid bearer token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Forbidden — the order belongs to another user.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: No order with that id.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  # ---- Cancel ---------------------------------------------------------------
+  # (Intentionally MISSING — you will add POST /orders/{id}/cancel in Task 4)
+
+  # ---- Refund (capstone) ----------------------------------------------------
+  # (Intentionally MISSING — you will add POST /orders/{id}/refund in Task 20)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: >
+        Send  Authorization: Bearer <token>  on write requests. Two demo tokens:
+        alice-token (Alice) and bob-token (Bob). Without a valid token, writes
+        return 401.
+  schemas:
+    Product:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        name: { type: string, example: "Widget" }
+        priceCents: { type: integer, example: 2999 }
+      required: [id, name, priceCents]
+
+    Order:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        userId: { type: string, example: "Alice" }
+        status: { type: string, enum: ["pending", "cancelled", "refunded"], example: "pending" }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              productId: { type: integer, example: 1 }
+              qty: { type: integer, example: 2 }
+            required: [productId, qty]
+        totalCents: { type: integer, example: 5998 }
+      required: [id, userId, status, items, totalCents]
+
+    NewOrder:
+      type: object
+      description: The items to order. The server computes totalCents from the catalog.
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              productId: { type: integer, example: 1 }
+              qty: { type: integer, example: 2 }
+            required: [productId, qty]
+      required: [items]
+
+    Error:
+      type: object
+      properties:
+        error: { type: string, example: "order not found" }
+      required: [error]

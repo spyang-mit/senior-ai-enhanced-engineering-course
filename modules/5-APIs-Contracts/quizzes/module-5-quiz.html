@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 5 Quiz — APIs, contracts & the client/server boundary</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --ink: #1c2024; --muted: #5b6570;
+    --border: #dfe3e8; --accent: #2f6fed; --code-bg: #f0f2f5;
+    --ok-bg: #e7f6ec; --ok-border: #34a853; --ok-ink: #1a6e34;
+    --no-bg: #fdeceb; --no-border: #e0483b; --no-ink: #b02a20;
+    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171a; --card: #1e2226; --ink: #e7ebef; --muted: #9aa4ae;
+      --border: #333a41; --accent: #5b8cff; --code-bg: #12151a;
+      --ok-bg: #16281c; --ok-border: #35a558; --ok-ink: #7fd79b;
+      --no-bg: #2a1917; --no-border: #d8564a; --no-ink: #f0a49c;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 18px 80px; }
+  header h1 { font-size: 1.5rem; margin: 0 0 4px; letter-spacing: -.01em; }
+  header p { color: var(--muted); margin: 0 0 18px; }
+  .score { position: sticky; top: 0; z-index: 5; background: var(--card);
+    border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow);
+    padding: 12px 16px; margin: 0 0 22px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .score .nums { font-weight: 600; }
+  .score .bar { flex: 1 1 140px; height: 8px; background: var(--code-bg); border-radius: 999px; overflow: hidden; min-width: 120px; }
+  .score .bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s ease; }
+  .score button { font: inherit; font-size: .85rem; cursor: pointer; background: transparent;
+    color: var(--accent); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; }
+  .score button:hover { border-color: var(--accent); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    box-shadow: var(--shadow); padding: 18px 18px 6px; margin: 0 0 18px; }
+  .qnum { color: var(--muted); font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .qtext { margin: 4px 0 12px; font-weight: 500; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; margin: 0 0 14px; overflow-x: auto;
+    font: .86rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .opts { display: grid; gap: 8px; }
+  .opt { display: block; width: 100%; text-align: left; cursor: pointer; font: inherit; color: var(--ink);
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px;
+    transition: border-color .12s, background .12s; }
+  .opt:hover:not(:disabled) { border-color: var(--accent); }
+  .opt:disabled { cursor: default; }
+  .opt.correct { background: var(--ok-bg); border-color: var(--ok-border); color: var(--ok-ink); }
+  .opt.wrong { background: var(--no-bg); border-color: var(--no-border); color: var(--no-ink); }
+  .opt .mark { float: right; font-weight: 700; }
+  .explain { margin: 12px 0 14px; padding: 11px 14px; border-radius: 10px; background: var(--code-bg);
+    border: 1px solid var(--border); color: var(--muted); font-size: .92rem; display: none; }
+  .explain.show { display: block; }
+  .explain code { color: var(--ink); }
+  .done { text-align: center; padding: 22px; border-radius: 14px; border: 1px dashed var(--border);
+    color: var(--muted); margin-top: 8px; display: none; }
+  .done.show { display: block; }
+  .done strong { color: var(--ink); font-size: 1.15rem; }
+  footer { color: var(--muted); font-size: .85rem; text-align: center; margin-top: 30px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Module 5 Quiz — APIs, contracts & the client/server boundary</h1>
+    <p>OpenAPI contracts, status-code discipline, idempotency, the trust boundary, pagination, versioning, and real-time trade-offs. Pick an answer to see if you're right.</p>
+  </header>
+
+  <div class="score" role="status" aria-live="polite">
+    <span class="nums"><span id="answered">0</span> answered · <span id="correct">0</span> correct</span>
+    <span class="bar"><i id="barfill"></i></span>
+    <button id="reset" type="button">Reset</button>
+  </div>
+
+  <main id="quiz"></main>
+  <div class="done" id="done"></div>
+  <footer>Never trust the client — the server owns prices, status, and access.</footer>
+</div>
+
+<script>
+// Distribution: A=4, B=3, C=4, D=3 — balanced across 14 questions
+const questions = [
+  {
+    q: "What is the purpose of writing an OpenAPI/YAML contract BEFORE implementing the server?",
+    options: [
+      "It's required by the Python HTTP server library",
+      "The contract documents the interface so the server implements what was designed, not what it invents",
+      "YAML files are faster to parse than Python code",
+      "It replaces the need for any server-side validation"
+    ],
+    answer: 1,
+    explain: "The contract is a first-class artifact you design before code. It documents every endpoint, request body, and response — so the server implements your design, not whatever the AI or coder happens to write."
+  },
+  {
+    q: "Which status code should a REST API return when a POST creates a new resource?",
+    options: ["200 OK", "201 Created", "202 Accepted", "204 No Content"],
+    answer: 3,
+    explain: "201 Created — POST creates a new resource and returns it in the body. 200 OK is for reads (GET) and updates (PUT). 202 Accepted is for async operations."
+  },
+  {
+    q: "Why is PUT idempotent by default, but POST is not?",
+    options: [
+      "PUT requires auth; POST doesn't",
+      "PUT replaces a resource at a known URL; POST creates a new resource each time",
+      "PUT uses the same HTTP method as GET",
+      "POST returns a different status code every time"
+    ],
+    answer: 2,
+    explain: "PUT replaces a resource at a known URL (same PUT twice → same state). POST creates a new resource each time (same POST twice → two resources). That's why POST needs an Idempotency-Key to become idempotent."
+  },
+  {
+    q: "A client sends an Idempotency-Key header with a POST request. The server receives the same key a second time. What should it do?",
+    options: [
+      "Reject with 409 — duplicate keys are forbidden",
+      "Return the same resource that was created the first time (200, not 201)",
+      "Create a new resource with a different id and ignore the duplicate key",
+      "Return 400 — the server doesn't support idempotency keys"
+    ],
+    answer: 1,
+    explain: "The server looks up the key, finds the existing order_id, and returns that order with 200 (not 201). The client gets the same result without creating a duplicate. That's the idempotency guarantee."
+  },
+  {
+    q: "What is the difference between 401 Unauthorized and 403 Forbidden?",
+    options: [
+      "401 means 'no valid credentials'; 403 means 'credentials valid but insufficient permission'",
+      "401 means 'forbidden'; 403 means 'unauthorized' — they are synonyms",
+      "401 is for read requests; 403 is for write requests",
+      "401 is a client error; 403 is a server error"
+    ],
+    answer: 0,
+    explain: "401 = 'who are you?' — no credentials or invalid ones. 403 = 'I know who you are, but you may not do this.' Getting them wrong leaks information (e.g. revealing that an order exists by returning 403 vs 404)."
+  },
+  {
+    q: "A client sends a request with a valid bearer token, but the order belongs to another user. Which status code should the server return?",
+    options: [
+      "401 Unauthorized — the client should re-authenticate",
+      "403 Forbidden — the client is authenticated but not authorized",
+      "404 Not Found — don't reveal the order's existence",
+      "200 OK — return the order anyway, auth is just for writes"
+    ],
+    answer: 3,
+    explain: "403 Forbidden: the client IS authenticated (the token is valid) but is NOT authorized to access this resource. Returning 404 would hide the existence leak but 403 is the honest signal that 'you found it but may not see it.'"
+  },
+  {
+    q: "The 'never trust the client' principle means:",
+    options: [
+      "The client should encrypt all data before sending it",
+      "The server should treat all client input as potentially malicious and be authoritative for every computed field",
+      "Client-side JavaScript should never be used for UI rendering",
+      "Every request must include a signed JWT for the server to trust it"
+    ],
+    answer: 2,
+    explain: "'Never trust the client' means the server is the authority for every computed or derived field — prices, status values, totals, access control. The client can SEND anything; the server must VALIDATE and COMPUTE what matters."
+  },
+  {
+    q: "A client sends totalCents: 1 for a Widget order. The server should:",
+    options: [
+      "Accept it — the client knows what they want to pay",
+      "Accept it but log the discrepancy for manual review",
+      "Compute the total from the catalog × quantity, ignoring the client's value",
+      "Return 400 — the client should not send totalCents at all"
+    ],
+    answer: 2,
+    explain: "The server computes totalCents from its own catalog × the ordered quantities. Any client-supplied totalCents is ignored. The server owns prices — this is the core trust-boundary discipline."
+  },
+  {
+    q: "A server-authoritative status lifecycle means:",
+    options: [
+      "The client tells the server what status to set, and the server obeys",
+      "The server defines valid status transitions and enforces them; the client only sends commands (cancel, refund), not status values",
+      "Status is not stored at all — it's computed on every read",
+      "The client and server negotiate status via a separate handshake"
+    ],
+    answer: 1,
+    explain: "Server-authoritative: the server defines the state machine (pending → cancelled, pending → paid → refunded). The client never sets status directly; it sends commands (cancel, refund) and the server applies the transition."
+  },
+  {
+    q: "What is the main drawback of polling (GET /orders/{id} every N seconds) for real-time updates?",
+    options: [
+      "It doesn't work at all — HTTP can't do real-time",
+      "Most polls return nothing new, wasting bandwidth and server resources",
+      "Polling requires a WebSocket connection",
+      "Polling is less secure than WebSocket"
+    ],
+    answer: 3,
+    explain: "Polling is reliable (client asks → server answers) but wasteful: most polls return 'no change' because nothing happened since the last poll. WebSocket pushes only when there IS a change, so no wasted requests."
+  },
+  {
+    q: "A WebSocket client disconnects briefly and misses two status updates. What is the recovery strategy?",
+    options: [
+      "The client should re-fetch the current state via GET on reconnect",
+      "The server automatically resends missed messages when the client reconnects",
+      "The client ignores the gap — stale state is fine",
+      "The connection is permanent — disconnection never happens"
+    ],
+    answer: 0,
+    explain: "WebSocket pushes updates only when they happen. If the client disconnects, it misses those messages. The standard recovery is to re-fetch current state via a GET endpoint on reconnect — a hybrid approach."
+  },
+  {
+    q: "Why should a paginated API return a 'total' count alongside the items?",
+    options: [
+      "Total is required by the OpenAPI specification",
+      "The client needs to know how many total pages exist to render pagination controls",
+      "Total helps the server optimize its query",
+      "Total replaces the need for an offset parameter"
+    ],
+    answer: 2,
+    explain: "Without 'total,' the client doesn't know how many pages exist. It would keep fetching 'next page' until it gets an empty page — which works but means one extra request and no way to show 'page 3 of 12' controls."
+  },
+  {
+    q: "API versioning via URL prefix (/v1/orders) is preferred over header versioning because:",
+    options: [
+      "Header versioning is not supported by HTTP",
+      "URL versioning is visible in every request, cache-friendly, and works with clients that send no custom headers",
+      "URL versioning is the only option OpenAPI allows",
+      "Header versioning requires the client to send a JWT"
+    ],
+    answer: 3,
+    explain: "URL versioning (/v1/orders) is visible (you see it in the URL), cache-friendly (different URLs are different cache keys), and works with any client. Header versioning needs every client to send a custom header — and 'no header' is ambiguous."
+  },
+  {
+    q: "Why do retries after a timeout DEMAND idempotency on POST endpoints?",
+    options: [
+      "Retries without idempotency can create duplicate resources because the client doesn't know if the first request succeeded",
+      "Retries are always safe — POST is designed for at-least-once delivery",
+      "Timeouts don't happen in practice — retries are a theoretical concern",
+      "The HTTP protocol prevents duplicate POSTs automatically"
+    ],
+    answer: 0,
+    explain: "If the first POST succeeded but the client timed out waiting for the response, the retry creates a duplicate. Without idempotency, the client can't tell which case happened. Idempotency-Key solves this: the server deduplicates."
+  }
+];
+
+const quiz = document.getElementById('quiz');
+const answeredEl = document.getElementById('answered');
+const correctEl = document.getElementById('correct');
+const barfill = document.getElementById('barfill');
+const doneEl = document.getElementById('done');
+let answered = 0, correct = 0;
+
+function build() {
+  quiz.innerHTML = ''; answered = 0; correct = 0; updateScore();
+  doneEl.className = 'done'; doneEl.textContent = '';
+  questions.forEach((item, qi) => {
+    const card = document.createElement('section'); card.className = 'card';
+    const num = document.createElement('div'); num.className = 'qnum';
+    num.textContent = 'Question ' + (qi + 1) + ' of ' + questions.length; card.appendChild(num);
+    const qt = document.createElement('p'); qt.className = 'qtext'; qt.textContent = item.q; card.appendChild(qt);
+    if (item.code) { const pre = document.createElement('pre'); pre.textContent = item.code; card.appendChild(pre); }
+    const opts = document.createElement('div'); opts.className = 'opts';
+    const buttons = [];
+    item.options.forEach((text, oi) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.textContent = text;
+      b.addEventListener('click', () => choose(qi, oi, buttons, expl));
+      opts.appendChild(b); buttons.push(b);
+    });
+    card.appendChild(opts);
+    const expl = document.createElement('div'); expl.className = 'explain'; expl.textContent = item.explain;
+    card.appendChild(expl);
+    quiz.appendChild(card);
+  });
+}
+
+function choose(qi, oi, buttons, expl) {
+  if (buttons[0].disabled) return;
+  const right = questions[qi].answer;
+  buttons.forEach((b, i) => {
+    b.disabled = true;
+    if (i === right) { b.classList.add('correct'); b.appendChild(mark('✓')); }
+    if (i === oi && oi !== right) { b.classList.add('wrong'); b.appendChild(mark('✗')); }
+  });
+  expl.classList.add('show');
+  answered++; if (oi === right) correct++;
+  updateScore();
+}
+
+function mark(sym) { const s = document.createElement('span'); s.className = 'mark'; s.textContent = sym; return s; }
+
+function updateScore() {
+  answeredEl.textContent = answered; correctEl.textContent = correct;
+  barfill.style.width = (answered / questions.length * 100) + '%';
+  if (answered === questions.length) {
+    const pct = Math.round(correct / questions.length * 100);
+    let note = pct === 100 ? "Perfect — you own the contract and the trust boundary now." :
+               pct >= 70 ? "Solid foundation. Re-read the ones you missed." :
+               "Worth another pass — then drill it against the API in the sandbox.";
+    doneEl.innerHTML = '';
+    const strong = document.createElement('strong');
+    strong.textContent = 'Score: ' + correct + ' / ' + questions.length + ' (' + pct + '%)';
+    doneEl.appendChild(strong); doneEl.appendChild(document.createElement('br'));
+    doneEl.appendChild(document.createTextNode(note));
+    doneEl.classList.add('show');
+  }
+}
+
+document.getElementById('reset').addEventListener('click', build);
+build();
+</script>
+</body>
+</html>
