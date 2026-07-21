@@ -1,0 +1,4 @@
+# The workspace is the learner's mounted scratch area — don't commit its contents.
+*
+!.gitignore
+!.gitkeep

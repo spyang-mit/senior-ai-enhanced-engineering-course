@@ -1,0 +1,3 @@
+# Python bytecode from running the harness/handlers
+__pycache__/
+*.pyc

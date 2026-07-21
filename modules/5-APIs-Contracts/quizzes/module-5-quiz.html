@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Module 5 Quiz — APIs, contracts & the client/server boundary</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --ink: #1c2024; --muted: #5b6570;
+    --border: #dfe3e8; --accent: #2f6fed; --code-bg: #f0f2f5;
+    --ok-bg: #e7f6ec; --ok-border: #34a853; --ok-ink: #1a6e34;
+    --no-bg: #fdeceb; --no-border: #e0483b; --no-ink: #b02a20;
+    --shadow: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171a; --card: #1e2226; --ink: #e7ebef; --muted: #9aa4ae;
+      --border: #333a41; --accent: #5b8cff; --code-bg: #12151a;
+      --ok-bg: #16281c; --ok-border: #35a558; --ok-ink: #7fd79b;
+      --no-bg: #2a1917; --no-border: #d8564a; --no-ink: #f0a49c;
+      --shadow: none;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 18px 80px; }
+  header h1 { font-size: 1.5rem; margin: 0 0 4px; letter-spacing: -.01em; }
+  header p { color: var(--muted); margin: 0 0 18px; }
+  .score { position: sticky; top: 0; z-index: 5; background: var(--card);
+    border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow);
+    padding: 12px 16px; margin: 0 0 22px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .score .nums { font-weight: 600; }
+  .score .bar { flex: 1 1 140px; height: 8px; background: var(--code-bg); border-radius: 999px; overflow: hidden; min-width: 120px; }
+  .score .bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .3s ease; }
+  .score button { font: inherit; font-size: .85rem; cursor: pointer; background: transparent;
+    color: var(--accent); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; }
+  .score button:hover { border-color: var(--accent); }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    box-shadow: var(--shadow); padding: 18px 18px 6px; margin: 0 0 18px; }
+  .qnum { color: var(--muted); font-size: .8rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .qtext { margin: 4px 0 12px; font-weight: 500; }
+  pre { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 12px; margin: 0 0 14px; overflow-x: auto;
+    font: .86rem/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  .opts { display: grid; gap: 8px; }
+  .opt { display: block; width: 100%; text-align: left; cursor: pointer; font: inherit; color: var(--ink);
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 11px 14px;
+    transition: border-color .12s, background .12s; }
+  .opt:hover:not(:disabled) { border-color: var(--accent); }
+  .opt:disabled { cursor: default; }
+  .opt.correct { background: var(--ok-bg); border-color: var(--ok-border); color: var(--ok-ink); }
+  .opt.wrong { background: var(--no-bg); border-color: var(--no-border); color: var(--no-ink); }
+  .opt .mark { float: right; font-weight: 700; }
+  .explain { margin: 12px 0 14px; padding: 11px 14px; border-radius: 10px; background: var(--code-bg);
+    border: 1px solid var(--border); color: var(--muted); font-size: .92rem; display: none; }
+  .explain.show { display: block; }
+  .explain code { color: var(--ink); }
+  .done { text-align: center; padding: 22px; border-radius: 14px; border: 1px dashed var(--border);
+    color: var(--muted); margin-top: 8px; display: none; }
+  .done.show { display: block; }
+  .done strong { color: var(--ink); font-size: 1.15rem; }
+  footer { color: var(--muted); font-size: .85rem; text-align: center; margin-top: 30px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Module 5 Quiz — APIs, contracts &amp; the client/server boundary</h1>
+    <p>Contracts, status codes, idempotency, and never trusting the client. Pick an answer to see if you're right.</p>
+  </header>
+
+  <div class="score" role="status" aria-live="polite">
+    <span class="nums"><span id="answered">0</span> answered · <span id="correct">0</span> correct</span>
+    <span class="bar"><i id="barfill"></i></span>
+    <button id="reset" type="button">Reset</button>
+  </div>
+
+  <main id="quiz"></main>
+  <div class="done" id="done"></div>
+  <footer>The server is the last line of defense — never trust the client for anything that matters.</footer>
+</div>
+
+<script>
+const questions = [
+  {
+    q: "A checkout API reads the order total straight from the request body and saves it. Why is that dangerous?",
+    options: [
+      "It isn't dangerous — the client always sends the correct total anyway",
+      "A malicious client can send any total it likes, e.g. one cent",
+      "Totals are too large to store as integers",
+      "The browser blocks requests that contain a total"
+    ],
+    answer: 1,
+    explain: "Anything the client can set, a hostile client will set. The server must compute the total from its own catalog and ignore the client's number."
+  },
+  {
+    q: "In REST, which method is used to CREATE a new resource?",
+    options: ["GET", "POST", "PUT", "DELETE"],
+    answer: 1,
+    explain: "POST creates. GET reads, PUT replaces/updates, DELETE removes."
+  },
+  {
+    q: "What does it mean for a request to be idempotent?",
+    options: [
+      "It always runs faster the second time it is called",
+      "It requires authentication in order to repeat",
+      "Repeating it leaves the same end state",
+      "It may be called only once, ever"
+    ],
+    answer: 2,
+    explain: "Idempotent = repeating it produces the same end state. GET/PUT/DELETE are idempotent; POST (create) is not."
+  },
+  {
+    q: "A create times out, so the client retries. On a plain POST /orders, what happens?",
+    options: [
+      "Nothing — POST ignores duplicate requests automatically",
+      "The server returns the first order again",
+      "A second, duplicate order gets created",
+      "The retry is rejected with a 409"
+    ],
+    answer: 2,
+    explain: "Each POST creates another resource. Without idempotency, a retry after a lost response makes a duplicate order."
+  },
+  {
+    q: "How do you make creating an order safe to retry?",
+    options: [
+      "Switch the create endpoint from POST to GET",
+      "Add a longer timeout on the client side",
+      "Return 204 No Content instead of 201",
+      "Accept an Idempotency-Key and return the same order on a repeat"
+    ],
+    answer: 3,
+    explain: "An Idempotency-Key lets the server recognize a retry and return the SAME order instead of creating a second one — the pattern real payment APIs use."
+  },
+  {
+    q: "A create arrives with a valid token but an empty items list. Which status should the server return?",
+    options: [
+      "500 Internal Server Error",
+      "401 Unauthorized",
+      "201 Created",
+      "400 Bad Request"
+    ],
+    answer: 3,
+    explain: "400 Bad Request — the credentials were fine, but the body failed validation."
+  },
+  {
+    q: "A logged-in user tries to read another user's order. What's the best response?",
+    options: [
+      "200 OK — sharing orders between users is fine",
+      "403 Forbidden, or 404 to hide that it exists",
+      "401 Unauthorized",
+      "409 Conflict"
+    ],
+    answer: 1,
+    explain: "They're authenticated (so not 401) but not authorized: 403. Many APIs return 404 instead, to avoid confirming someone else's resource exists."
+  },
+  {
+    q: "The client sends status:\"paid\" when creating an order. What should the server do?",
+    options: [
+      "Ignore it — a new order is always pending",
+      "Store it as paid; the client knows best",
+      "Return 500 because the status is unexpected",
+      "Save it but flag the order for manual review"
+    ],
+    answer: 0,
+    explain: "The status lifecycle is server-controlled, driven by real events (like a payment succeeding). A new order always starts pending."
+  },
+  {
+    q: "Where must input validation live to actually protect your data?",
+    options: [
+      "On the server, at the boundary",
+      "In the client UI, before the request is sent",
+      "In the page's CSS validation attributes",
+      "Only in the database's column indexes"
+    ],
+    answer: 0,
+    explain: "Client-side checks are bypassable with a direct API call. Only server-side validation actually protects the data."
+  },
+  {
+    q: "Why must a list endpoint (like GET /orders) paginate?",
+    options: [
+      "Because JSON can't hold more than 100 items",
+      "To make the request URL shorter",
+      "So it stays fast and doesn't dump the whole table",
+      "Because GET requests are capped at 1 KB"
+    ],
+    answer: 2,
+    explain: "Returning everything is fine with 3 rows and a disaster with 3 million. limit/offset (or a cursor) keeps it fast — and scoping to the caller keeps it private."
+  },
+  {
+    q: "In this module, what is the \"contract\" (orders-api.yaml)?",
+    options: [
+      "A specification you design before writing code",
+      "A log file the server writes out after each request",
+      "A frontend framework for building forms",
+      "A database table that stores all the orders"
+    ],
+    answer: 0,
+    explain: "The OpenAPI contract is a first-class artifact: you design the endpoints, shapes, and error cases up front, then make the code conform."
+  },
+  {
+    q: "When is a websocket a better fit than polling the REST API?",
+    options: [
+      "When you fetch a value once and never again",
+      "When you want the simplest possible one-off request",
+      "When updates are frequent and you want them pushed live",
+      "When the server must never initiate any message"
+    ],
+    answer: 2,
+    explain: "Websockets shine for frequent, latency-sensitive updates the server pushes. For rare or one-off reads, plain requests are simpler."
+  },
+  {
+    q: "Why do APIs put a version in the path, like /v1/orders?",
+    options: [
+      "To make the URL look more official",
+      "Because web browsers strictly require a version segment in the path",
+      "So the server can skip auth on old versions",
+      "So a breaking change can ship as /v2 while /v1 keeps working"
+    ],
+    answer: 3,
+    explain: "Versioning lets an incompatible change go live as /v2 while existing /v1 clients keep working — evolve without breaking anyone."
+  },
+  {
+    q: "To stop Alice from reading Bob's order, the server should…",
+    options: [
+      "check ownership and return 404 if the order isn't hers",
+      "trust the token and return whatever order was asked for",
+      "hide other users' orders only in the frontend list",
+      "require a second password before showing any order"
+    ],
+    answer: 0,
+    explain: "Authentication ('who are you?') isn't enough — you also need authorization ('may you?'). Check ownership on the server for every read and write."
+  }
+];
+
+const quiz = document.getElementById('quiz');
+const answeredEl = document.getElementById('answered');
+const correctEl = document.getElementById('correct');
+const barfill = document.getElementById('barfill');
+const doneEl = document.getElementById('done');
+let answered = 0, correct = 0;
+
+function build() {
+  quiz.innerHTML = ''; answered = 0; correct = 0; updateScore();
+  doneEl.className = 'done'; doneEl.textContent = '';
+  questions.forEach((item, qi) => {
+    const card = document.createElement('section'); card.className = 'card';
+    const num = document.createElement('div'); num.className = 'qnum';
+    num.textContent = 'Question ' + (qi + 1) + ' of ' + questions.length; card.appendChild(num);
+    const qt = document.createElement('p'); qt.className = 'qtext'; qt.textContent = item.q; card.appendChild(qt);
+    if (item.code) { const pre = document.createElement('pre'); pre.textContent = item.code; card.appendChild(pre); }
+    const opts = document.createElement('div'); opts.className = 'opts';
+    const buttons = [];
+    item.options.forEach((text, oi) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.textContent = text;
+      b.addEventListener('click', () => choose(qi, oi, buttons, expl));
+      opts.appendChild(b); buttons.push(b);
+    });
+    card.appendChild(opts);
+    const expl = document.createElement('div'); expl.className = 'explain'; expl.textContent = item.explain;
+    card.appendChild(expl);
+    quiz.appendChild(card);
+  });
+}
+
+function choose(qi, oi, buttons, expl) {
+  if (buttons[0].disabled) return;
+  const right = questions[qi].answer;
+  buttons.forEach((b, i) => {
+    b.disabled = true;
+    if (i === right) { b.classList.add('correct'); b.appendChild(mark('✓')); }
+    if (i === oi && oi !== right) { b.classList.add('wrong'); b.appendChild(mark('✗')); }
+  });
+  expl.classList.add('show');
+  answered++; if (oi === right) correct++;
+  updateScore();
+}
+
+function mark(sym) { const s = document.createElement('span'); s.className = 'mark'; s.textContent = sym; return s; }
+
+function updateScore() {
+  answeredEl.textContent = answered; correctEl.textContent = correct;
+  barfill.style.width = (answered / questions.length * 100) + '%';
+  if (answered === questions.length) {
+    const pct = Math.round(correct / questions.length * 100);
+    let note = pct === 100 ? "Perfect — you own the contract and the trust boundary." :
+               pct >= 70 ? "Solid. Re-read the ones you missed." :
+               "Worth another pass — then drill it against the API in the sandbox.";
+    doneEl.innerHTML = '';
+    const strong = document.createElement('strong');
+    strong.textContent = 'Score: ' + correct + ' / ' + questions.length + ' (' + pct + '%)';
+    doneEl.appendChild(strong); doneEl.appendChild(document.createElement('br'));
+    doneEl.appendChild(document.createTextNode(note));
+    doneEl.classList.add('show');
+  }
+}
+
+document.getElementById('reset').addEventListener('click', build);
+build();
+</script>
+</body>
+</html>

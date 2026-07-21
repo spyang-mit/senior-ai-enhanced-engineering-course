@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+# ./sandbox — enter the disposable Module 5 Linux container.
+#
+# Requires Docker. If Docker isn't installed (or isn't running), this prints
+# guidance for your operating system and exits without touching anything.
+#
+# This module MOUNTS a local ./workspace folder into the container, so you can
+# edit the server code from your host (with your editor / AI) while the lesson
+# runs inside. Your code persists in ./workspace even after the container exits.
+set -euo pipefail
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+IMAGE="module5-apis-sandbox"
+WORKSPACE="$DIR/workspace"
+
+detect_os() {
+  case "$(uname -s)" in
+    Darwin) echo "mac" ;;
+    Linux)
+      if grep -qiE 'microsoft|wsl' /proc/version 2>/dev/null; then echo "wsl"; else echo "linux"; fi ;;
+    *) echo "other" ;;
+  esac
+}
+
+print_install_help() {
+  echo
+  echo "==============================================================="
+  echo " This lesson needs Docker, and it isn't installed."
+  echo "==============================================================="
+  echo
+  echo " Docker gives you a THROWAWAY Linux machine with the orders API"
+  echo " already running. Please install it, then re-run:  ./sandbox"
+  echo
+  case "$(detect_os)" in
+    mac)
+      cat <<'EOF'
+ macOS
+ -----
+ 1. Install Docker Desktop:
+      - Download: https://www.docker.com/products/docker-desktop/
+      - or with Homebrew:   brew install --cask docker
+ 2. Open the Docker app once so the engine starts (whale icon in the menu bar).
+ 3. Re-run:  ./sandbox
+EOF
+      ;;
+    linux)
+      cat <<'EOF'
+ Linux
+ -----
+ 1. Install Docker Engine (pick one):
+      - Your package manager, e.g.:  sudo apt-get install docker.io
+      - or the official script:       curl -fsSL https://get.docker.com | sh
+ 2. Run without sudo (recommended):
+      sudo usermod -aG docker "$USER"    # then log out and back in
+ 3. Start it:  sudo systemctl start docker
+ 4. Re-run:  ./sandbox
+EOF
+      ;;
+    wsl)
+      cat <<'EOF'
+ Windows (via WSL2 — you're in the right shell)
+ ----------------------------------------------
+ 1. Install Docker Desktop for Windows with the WSL2 backend:
+      https://www.docker.com/products/docker-desktop/
+ 2. In Docker Desktop: Settings -> Resources -> WSL Integration, enable this distro.
+ 3. Keep running ./sandbox from THIS WSL shell (not cmd/PowerShell).
+ 4. Re-run:  ./sandbox
+EOF
+      ;;
+    *)
+      cat <<'EOF'
+ Install Docker for your platform:  https://docs.docker.com/get-docker/
+ Then re-run:  ./sandbox
+EOF
+      ;;
+  esac
+  echo
+}
+
+if ! command -v docker >/dev/null 2>&1; then
+  print_install_help
+  exit 1
+fi
+
+if ! docker info >/dev/null 2>&1; then
+  echo
+  echo "Docker is installed but its engine isn't running."
+  case "$(detect_os)" in
+    mac|wsl) echo "  Start Docker Desktop (whale icon), wait for 'running', then re-run: ./sandbox" ;;
+    linux)   echo "  Start it with:  sudo systemctl start docker    then re-run: ./sandbox" ;;
+    *)       echo "  Start the Docker engine, then re-run: ./sandbox" ;;
+  esac
+  echo
+  exit 1
+fi
+
+mkdir -p "$WORKSPACE"
+
+echo "Preparing the sandbox image (first run downloads Debian; later runs are instant)..."
+docker build -t "$IMAGE" -f "$DIR/docker/Dockerfile" "$DIR"
+
+echo
+echo "Entering the throwaway sandbox."
+echo "  • The orders API is on http://localhost:8080  (curl it here)."
+echo "  • Edit code from your host in:  $WORKSPACE"
+echo "  • Type 'exit' to leave (the container self-destructs; your workspace stays)."
+exec docker run --rm -it \
+  -p 8080:8080 -p 8081:8081 \
+  -v "$WORKSPACE:/home/dev/workspace" \
+  "$IMAGE"

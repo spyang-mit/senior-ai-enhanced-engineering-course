@@ -1,0 +1,188 @@
+# =============================================================================
+# Orders API -- the CONTRACT for Module 5.
+#
+# This YAML is the single source of truth for how the service behaves. You OWN
+# it: you design it before code exists, and the server must implement exactly
+# what it says. In Module 4 you read a contract; here you author and extend one,
+# then make a (deliberately flawed) server conform to it.
+#
+# Design rules baked into this contract:
+#   * The SERVER is authoritative. The client never sets the price, the total,
+#     or the order status -- the server computes/controls them.
+#   * Writes (POST/PUT/DELETE) require a bearer token. Reads of an order require
+#     you to be its owner.
+#   * Creating an order is idempotent when you send an Idempotency-Key header:
+#     a retried create returns the SAME order instead of making a second one.
+# =============================================================================
+openapi: 3.0.3
+info:
+  title: Orders API
+  version: 1.0.0
+  description: >
+    A tiny store's orders service for Module 5. Products have server-owned
+    prices; an order is a list of items whose total the SERVER computes. This
+    document is the contract you implement and defend.
+
+servers:
+  - url: http://localhost:8080
+    description: The local API running inside your sandbox container
+
+# Two demo users. Send one of these as:  Authorization: Bearer <token>
+# so authorization (owner-only access) is real and testable.
+#   alice-token  -> alice
+#   bob-token    -> bob
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: "Authorization: Bearer <token>  (alice-token or bob-token)"
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: >
+        A client-chosen unique string. If two create requests arrive with the
+        same key, the server must return the SAME order, not create a second.
+      schema: { type: string }
+  schemas:
+    Product:
+      type: object
+      properties:
+        id: { type: integer, example: 1 }
+        name: { type: string, example: "Widget" }
+        priceCents: { type: integer, example: 500 }
+      required: [id, name, priceCents]
+    OrderItem:
+      type: object
+      description: One line of an order. The client sends productId and qty ONLY.
+      properties:
+        productId: { type: integer, example: 1 }
+        qty: { type: integer, example: 2, minimum: 1 }
+      required: [productId, qty]
+    NewOrder:
+      type: object
+      description: >
+        The create payload. Note what is ABSENT: no price, no total, no status.
+        Those are server-authoritative -- the server ignores them if sent.
+      properties:
+        items:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/OrderItem" }
+      required: [items]
+    Order:
+      type: object
+      properties:
+        id: { type: integer, example: 1001 }
+        userId: { type: string, example: "alice" }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/OrderItem" }
+        totalCents: { type: integer, description: "Computed by the server.", example: 1000 }
+        status:
+          type: string
+          description: "Server-controlled lifecycle."
+          enum: [pending, paid, shipped, cancelled]
+          example: pending
+      required: [id, userId, items, totalCents, status]
+    Error:
+      type: object
+      properties:
+        error: { type: string, example: "qty must be >= 1" }
+      required: [error]
+
+paths:
+  # ---- Products: a fixed catalog the server prices ---------------------------
+  /products:
+    get:
+      summary: List products
+      description: Public. The priceCents here is the ONLY source of truth for price.
+      responses:
+        "200":
+          description: The product catalog.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Product" }
+
+  # ---- The orders collection: create one, or list your own -------------------
+  /orders:
+    get:
+      summary: List YOUR orders
+      description: Returns only orders owned by the authenticated user, paginated.
+      security: [ { bearerAuth: [] } ]
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          description: Max orders to return (default 20).
+          schema: { type: integer, default: 20 }
+        - name: offset
+          in: query
+          required: false
+          description: How many to skip (default 0).
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: A page of the caller's orders.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total: { type: integer, description: "Total orders the caller has." }
+                  items:
+                    type: array
+                    items: { $ref: "#/components/schemas/Order" }
+                required: [total, items]
+        "401": { description: Missing or invalid bearer token. }
+    post:
+      summary: Create an order
+      description: >
+        Creates an order from items. The server looks up each product, computes
+        totalCents from the catalog, and sets status to "pending". Send an
+        Idempotency-Key so a retried create is not duplicated.
+      security: [ { bearerAuth: [] } ]
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewOrder" }
+      responses:
+        "201":
+          description: Created. Returns the new order with a server-computed total.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Order" }
+        "400":
+          description: Invalid body (empty items, qty < 1, or unknown productId).
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401": { description: Missing or invalid bearer token. }
+
+  # ---- A single order: read it (owner only) ----------------------------------
+  /orders/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        description: The order's numeric id.
+        schema: { type: integer }
+    get:
+      summary: Get one of YOUR orders
+      description: Returns the order only if the caller owns it; otherwise 404.
+      security: [ { bearerAuth: [] } ]
+      responses:
+        "200":
+          description: The requested order.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Order" }
+        "401": { description: Missing or invalid bearer token. }
+        "404": { description: No such order for this caller. }
