@@ -7,7 +7,7 @@ again — instead of making a second one.
 
 The naive server ignores the header (try it: two POSTs with the same
 Idempotency-Key still make two orders). Implement it properly in:
-  ~/workspace/handlers/10-idempotent.py
+  ~/workspace/handlers/idempotent.py
 Use ctx.idempotency (a dict) to remember key -> order: on a repeat key, return
 the stored order; otherwise create it and store it. Edit on your host, then run
 'lesson check' — it retries with the same key and a different key."
@@ -16,17 +16,17 @@ TASK_WHY="This is the pattern real payment and order APIs use (Stripe's is exact
 this). It's the piece that makes 'retry on timeout' correct rather than
 dangerous — the direct payoff of the last two tasks."
 TASK_HINTS=(
-  "Two TODOs in ~/workspace/handlers/10-idempotent.py: check the key on the way in, store it on the way out."
+  "Two TODOs in ~/workspace/handlers/idempotent.py: check the key on the way in, store it on the way out."
   "If key and key in ctx.idempotency: return (200, ctx.idempotency[key]). Otherwise create, then if key: ctx.idempotency[key] = order."
   "Ask your AI: 'make this create handler honor the Idempotency-Key header using ctx.idempotency.'"
 )
-TASK_GOAL="Honor Idempotency-Key so a retried create returns the same order — edit ~/workspace/handlers/10-idempotent.py"
-setup() { seed_handler "10-idempotent.py"; }
+TASK_GOAL="Honor Idempotency-Key so a retried create returns the same order — edit ~/workspace/handlers/idempotent.py"
+setup() { seed_handler "idempotent.py"; }
 check() {
-  if run_harness idempotent "$HANDLERS/10-idempotent.py"; then
+  if run_harness idempotent "$HANDLERS/idempotent.py"; then
     pass "same key -> same order (no duplicate); a new key -> a new order. Creates are now safe to retry."
   else
-    fail "implement the Idempotency-Key logic in ~/workspace/handlers/10-idempotent.py (see failing checks above), then run lesson check"
+    fail "implement the Idempotency-Key logic in ~/workspace/handlers/idempotent.py (see failing checks above), then run lesson check"
     return 1
   fi
 }

@@ -22,6 +22,7 @@ TASK_DIR="$LESSON_HOME/tasks"
 STATE_DIR="$HOME/.lesson"
 STATE_FILE="$STATE_DIR/current"
 HINT_FILE="$STATE_DIR/hint"
+QUIZPROG_FILE="$STATE_DIR/quizprog"   # how many of this task's questions are answered
 
 # shellcheck source=/dev/null
 source "$LESSON_HOME/lib/ui.sh"
@@ -35,13 +36,13 @@ mkdir -p "$STATE_DIR"
 [ -f "$STATE_FILE" ] || echo 1 > "$STATE_FILE"
 
 cur() { cat "$STATE_FILE"; }
-set_cur() { echo "$1" > "$STATE_FILE"; echo 0 > "$HINT_FILE"; }
+set_cur() { echo "$1" > "$STATE_FILE"; echo 0 > "$HINT_FILE"; echo 0 > "$QUIZPROG_FILE"; }
 
 load_task() {
   local n=$1
   TASK_TITLE=; TASK_CAT=; TASK_BODY=; TASK_TRY=; TASK_WHY=; TASK_GOAL=; TASK_HINTS=()
   TASK_QUIZ=; TASK_QUIZ_OPTIONS=(); TASK_QUIZ_ANSWER=; TASK_QUIZ_EXPLAIN=
-  unset -f check setup 2>/dev/null || true
+  unset -f check setup quiz 2>/dev/null || true
   # shellcheck source=/dev/null
   source "${TASKS[$((n - 1))]}"
 }
@@ -72,8 +73,8 @@ show_task() {
   # The concrete deliverable, highlighted so it doesn't get lost in the prose.
   [ -n "$TASK_GOAL" ] && printf '\n%s %s\n' "${C_MAGENTA}${C_BOLD}▸ GOAL:${C_RESET}" "${C_BOLD}${TASK_GOAL}${C_RESET}"
   echo
-  if [ -n "$TASK_QUIZ" ]; then
-    printf '%s\n' "${C_DIM}When you're ready, run: lesson check   — it'll ask you a question. (stuck? lesson hint)${C_RESET}"
+  if declare -F quiz >/dev/null || [ -n "$TASK_QUIZ" ]; then
+    printf '%s\n' "${C_DIM}When you're ready, run: lesson check   — it'll ask you some questions. (stuck? lesson hint)${C_RESET}"
   else
     printf '%s\n' "${C_DIM}Do the work, then: lesson check   (stuck? lesson hint)${C_RESET}"
   fi
@@ -83,6 +84,9 @@ do_check() {
   local n; n=$(cur)
   if (( n > TOTAL )); then finished; return; fi
   load_task "$n"
+  if declare -F quiz >/dev/null; then
+    do_quiz_multi "$n"; return
+  fi
   if [ -n "$TASK_QUIZ" ]; then
     do_quiz "$n"; return
   fi
@@ -91,6 +95,59 @@ do_check() {
   else
     printf '%s\n' "${C_DIM}Not there yet. Try again, or: lesson hint${C_RESET}"
     return 1
+  fi
+}
+
+# A multi-question task defines quiz(), which calls ask() once per question.
+# Progress persists across `lesson check` runs, so a wrong answer only re-asks
+# THAT question next time — you never redo the ones you already got right.
+do_quiz_multi() {
+  local n=$1
+  QUIZ_IDX=0
+  QUIZ_PROGRESS=$(cat "$QUIZPROG_FILE" 2>/dev/null || echo 0)
+  QUIZ_FAILED=0
+  quiz
+  local total=$QUIZ_IDX
+  echo "$QUIZ_PROGRESS" > "$QUIZPROG_FILE"
+  if (( QUIZ_FAILED == 0 && QUIZ_PROGRESS >= total )); then
+    _advance "$n"
+  else
+    echo
+    printf '%s\n' "${C_DIM}Answered ${QUIZ_PROGRESS}/${total}. Run ${C_BOLD}lesson check${C_RESET}${C_DIM} to pick up where you left off (or ${C_BOLD}lesson hint${C_RESET}${C_DIM}).${C_RESET}"
+    return 1
+  fi
+}
+
+# ask <question> <opt1> <opt2> ... <optN> <answer-1-based> <explanation>
+# Asks only questions not yet answered; stops at the first wrong one this run.
+ask() {
+  local q="$1"; shift
+  local args=("$@") count=${#args[@]}
+  local explain="${args[$((count - 1))]}"
+  local answer="${args[$((count - 2))]}"
+  local nopts=$((count - 2))
+  local opts=("${args[@]:0:nopts}")
+  local i=$QUIZ_IDX
+  QUIZ_IDX=$((QUIZ_IDX + 1))
+  (( QUIZ_FAILED )) && return          # already missed one this run
+  (( i < QUIZ_PROGRESS )) && return    # already answered correctly before
+  echo
+  printf '%s %s\n' "${C_CYAN}Q$((i + 1)):${C_RESET}" "${C_BOLD}${q}${C_RESET}"
+  local j letter
+  for j in "${!opts[@]}"; do
+    letter=$(printf "\\$(printf '%03o' $((97 + j)))")
+    printf '  %s) %s\n' "$letter" "${opts[$j]}"
+  done
+  printf '%s' "Your answer: "
+  local reply; read -r reply || true
+  reply="$(printf '%s' "$reply" | tr 'A-Z' 'a-z' | tr -d '[:space:]')"
+  local want; want=$(printf "\\$(printf '%03o' $((97 + answer - 1)))")
+  if [ "$reply" = "$want" ] || [ "$reply" = "$answer" ]; then
+    printf '%s %s\n' "${C_GREEN}✓ Correct.${C_RESET}" "$explain"
+    QUIZ_PROGRESS=$((i + 1))
+  else
+    printf '%s\n' "${C_RED}✗ Not quite.${C_RESET} ${C_DIM}Re-read the task or try lesson hint, then run lesson check to try this one again.${C_RESET}"
+    QUIZ_FAILED=1
   fi
 }
 

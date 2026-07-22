@@ -6,7 +6,16 @@ path to ~/workspace/orders-api.yaml:
 
   POST /orders/{id}/cancel   — cancel one of your orders.
 
-Specify it like the rest of the contract: a path parameter 'id', a
+The '{id}' is a PATH PARAMETER — a placeholder, not a literal. A real request
+substitutes an actual order id right there in the URL:
+  POST /orders/4/cancel   cancels the order whose id is 4
+  POST /orders/9/cancel   cancels order 9
+So ONE path definition serves every order — the id travels IN the path (not the
+body or a query string). In the contract you declare it once as a parameter with
+'in: path'; in code it arrives as that order id (the req.order_id your handlers
+will use later).
+
+Specify it like the rest of the contract: the path parameter 'id', a
 'post:' with a summary, bearerAuth security, and a 'responses:' block. Give it at
 least a 2xx success (200 returning the Order, or 204 No Content) and the failure
 cases that matter (401 no token, 404 not your order).

@@ -13,8 +13,10 @@ mkdir -p "$WS/handlers" "$WS/capstone"
 # --- seed the workspace (seed-if-missing) ----------------------------------
 cp -n /opt/app/orders-api.yaml "$WS/orders-api.yaml"    2>/dev/null || true
 cp -n /opt/app/ws-listen.py     "$WS/ws-listen.py"      2>/dev/null || true
-for f in /opt/lesson/handlers-seed/[0-9]*.py; do
-  cp -n "$f" "$WS/handlers/$(basename "$f")"            2>/dev/null || true
+for f in /opt/lesson/handlers-seed/*.py; do
+  b="$(basename "$f")"
+  [ "$b" = "capstone-refund.py" ] && continue
+  cp -n "$f" "$WS/handlers/$b"                          2>/dev/null || true
 done
 cp -n /opt/lesson/handlers-seed/capstone-refund.py "$WS/capstone/refund.py" 2>/dev/null || true
 

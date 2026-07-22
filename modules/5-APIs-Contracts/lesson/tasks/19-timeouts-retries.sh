@@ -9,7 +9,7 @@ That retry is safe only because you did the idempotency work: with an
 Idempotency-Key, the second attempt returns the same order instead of making a
 duplicate. Without it, every timeout risks a double order. Failure handling and
 idempotency are two halves of one idea. Run 'lesson check' for a question."
-TASK_TRY="less ~/workspace/handlers/10-idempotent.py"
+TASK_TRY="less ~/workspace/handlers/idempotent.py"
 TASK_WHY="You can't prevent timeouts; you can only make the recovery (a retry)
 safe. That's why 'is this write idempotent?' is one of the first questions a
 senior engineer asks about any endpoint."

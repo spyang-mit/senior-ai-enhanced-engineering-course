@@ -8,7 +8,7 @@ can read Bob's order:
 Order 2 is Bob's, yet Alice gets it. A classic broken-access-control leak.
 
 Fix it in:
-  ~/workspace/handlers/14-auth.py
+  ~/workspace/handlers/auth.py
 Only the owner may read an order. If it isn't the caller's, return 404 (don't
 even confirm it exists). Note the code choices: 401 = no/invalid token,
 403 = valid token but not allowed, 404 = we won't reveal it exists. We use 404
@@ -22,13 +22,13 @@ TASK_HINTS=(
   "If order['userId'] != ctx.user, return (404, {\"error\": \"not found\"}) — same as if it didn't exist."
   "Ask your AI: 'only the owner may read this order; otherwise 404 so we don't leak that it exists.'"
 )
-TASK_GOAL="Return 404 when the caller isn't the order's owner — edit ~/workspace/handlers/14-auth.py"
-setup() { seed_handler "14-auth.py"; }
+TASK_GOAL="Return 404 when the caller isn't the order's owner — edit ~/workspace/handlers/auth.py"
+setup() { seed_handler "auth.py"; }
 check() {
-  if run_harness auth "$HANDLERS/14-auth.py"; then
+  if run_harness auth "$HANDLERS/auth.py"; then
     pass "owners read their own orders; everyone else gets 404. Authentication AND authorization — the trust boundary is closed."
   else
-    fail "add the ownership check to ~/workspace/handlers/14-auth.py (see failing checks above), then run lesson check"
+    fail "add the ownership check to ~/workspace/handlers/auth.py (see failing checks above), then run lesson check"
     return 1
   fi
 }
